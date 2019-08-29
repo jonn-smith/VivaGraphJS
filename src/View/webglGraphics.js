@@ -96,6 +96,7 @@ function webglGraphics(options) {
         };
 
     graphicsRoot = window.document.createElement("canvas");
+    graphicsRoot.setAttribute('id', 'canvas');
 
     var graphics = {
         getLinkUI: function (linkId) {

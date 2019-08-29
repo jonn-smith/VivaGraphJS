@@ -3120,7 +3120,7 @@ module.exports = betweennes;
 function betweennes(graph, oriented) {
   var Q = [],
     S = []; // Queue and Stack
-  // list of predcessors on shorteest paths from source
+  // list of predecessors on shortest paths from source
   var pred = Object.create(null);
   // distance from source
   var dist = Object.create(null);
@@ -3162,9 +3162,9 @@ function betweennes(graph, oriented) {
     while (S.length) {
       var w = S.pop();
       var coeff = (1 + delta[w])/sigma[w];
-      var predcessors = pred[w];
-      for (var idx = 0; idx < predcessors.length; ++idx) {
-        var v = predcessors[idx];
+      var predecessors = pred[w];
+      for (var idx = 0; idx < predecessors.length; ++idx) {
+        var v = predecessors[idx];
         delta[v] += sigma[v] * coeff;
       }
       if (w !== currentNode) {
@@ -3231,7 +3231,7 @@ module.exports = closeness;
  */
 function closeness(graph, oriented) {
   var Q = [];
-  // list of predcessors on shortest paths from source
+  // list of predecessors on shortest paths from source
   // distance from source
   var dist = Object.create(null);
 
@@ -3603,7 +3603,7 @@ function createLayout(graph, physicsSettings) {
     /**
      * Performs one step of iterative layout algorithm
      *
-     * @returns {boolean} true if the system should be considered stable; Flase otherwise.
+     * @returns {boolean} true if the system should be considered stable; False otherwise.
      * The system is stable if no further call to `step()` can improve the layout.
      */
     step: function() {
@@ -3715,7 +3715,7 @@ function createLayout(graph, physicsSettings) {
      * @param {string} linkId link identifer. If two arguments are passed then
      * this argument is treated as formNodeId
      * @param {string=} toId when defined this parameter denotes head of the link
-     * and first argument is trated as tail of the link (fromId)
+     * and first argument is treated as tail of the link (fromId)
      */
     getSpring: getSpring,
 
@@ -3730,7 +3730,7 @@ function createLayout(graph, physicsSettings) {
     graph: graph,
 
     /**
-     * Gets amount of movement performed during last step opeartion
+     * Gets amount of movement performed during last step operation
      */
     lastMove: 0
   };
@@ -3903,7 +3903,7 @@ function createLayout(graph, physicsSettings) {
 
   /**
    * Checks whether graph node has in its settings pinned attribute,
-   * which means layout algorithm cannot move it. Node can be preconfigured
+   * which means layout algorithm cannot move it. Node can be marked
    * as pinned, if it has "isPinned" attribute, or when node.data has it.
    *
    * @param {Object} node a graph node to check
@@ -3937,9 +3937,7 @@ function createLayout(graph, physicsSettings) {
 
 function noop() { }
 
-},{"ngraph.events":13,"ngraph.physics.simulator":22}],13:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],14:[function(require,module,exports){
+},{"ngraph.events":10,"ngraph.physics.simulator":26}],13:[function(require,module,exports){
 module.exports = load;
 
 var parseDot = require('dotparser');
@@ -4062,7 +4060,9 @@ function parseAttributesAsData(attributesList) {
 }
 
 
-},{"dotparser":3,"ngraph.graph":15}],15:[function(require,module,exports){
+},{"dotparser":3,"ngraph.graph":15}],14:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],15:[function(require,module,exports){
 /**
  * @fileOverview Contains definition of the core graph object.
  */
@@ -4665,7 +4665,7 @@ function makeLinkId(fromId, toId) {
   return fromId.toString() + '👉 ' + toId.toString();
 }
 
-},{"ngraph.events":10}],16:[function(require,module,exports){
+},{"ngraph.events":14}],16:[function(require,module,exports){
 module.exports = load;
 
 var createGraph = require('ngraph.graph');
@@ -4710,7 +4710,11 @@ function load(jsonGraph, nodeTransform, linkTransform) {
 
 function id(x) { return x; }
 
-},{"ngraph.graph":19}],17:[function(require,module,exports){
+},{"ngraph.graph":18}],17:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],18:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15,"ngraph.events":17}],19:[function(require,module,exports){
 var createGraph = require('ngraph.graph');
 
 module.exports = factory(createGraph);
@@ -5057,7 +5061,11 @@ function factory(createGraph) {
   }
 }
 
-},{"ngraph.graph":19,"ngraph.random":18}],18:[function(require,module,exports){
+},{"ngraph.graph":21,"ngraph.random":22}],20:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],21:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15,"ngraph.events":20}],22:[function(require,module,exports){
 module.exports = random;
 
 // TODO: Deprecate?
@@ -5174,610 +5182,9 @@ function randomIterator(array, customRandom) {
     }
   }
 }
-},{}],19:[function(require,module,exports){
-/**
- * @fileOverview Contains definition of the core graph object.
- */
-
-// TODO: need to change storage layer:
-// 1. Be able to get all nodes O(1)
-// 2. Be able to get number of links O(1)
-
-/**
- * @example
- *  var graph = require('ngraph.graph')();
- *  graph.addNode(1);     // graph has one node.
- *  graph.addLink(2, 3);  // now graph contains three nodes and one link.
- *
- */
-module.exports = createGraph;
-
-var eventify = require('ngraph.events');
-
-/**
- * Creates a new graph
- */
-function createGraph(options) {
-  // Graph structure is maintained as dictionary of nodes
-  // and array of links. Each node has 'links' property which
-  // hold all links related to that node. And general links
-  // array is used to speed up all links enumeration. This is inefficient
-  // in terms of memory, but simplifies coding.
-  options = options || {};
-  if ('uniqueLinkId' in options) {
-    console.warn(
-      'ngraph.graph: Starting from version 0.14 `uniqueLinkId` is deprecated.\n' +
-      'Use `multigraph` option instead\n',
-      '\n',
-      'Note: there is also change in default behavior: From now own each graph\n'+
-      'is considered to be not a multigraph by default (each edge is unique).'
-    );
-
-    options.multigraph = options.uniqueLinkId;
-  }
-
-  // Dear reader, the non-multigraphs do not guarantee that there is only
-  // one link for a given pair of node. When this option is set to false
-  // we can save some memory and CPU (18% faster for non-multigraph);
-  if (options.multigraph === undefined) options.multigraph = false;
-
-  var nodes = typeof Object.create === 'function' ? Object.create(null) : {},
-    links = [],
-    // Hash of multi-edges. Used to track ids of edges between same nodes
-    multiEdges = {},
-    nodesCount = 0,
-    suspendEvents = 0,
-
-    forEachNode = createNodeIterator(),
-    createLink = options.multigraph ? createUniqueLink : createSingleLink,
-
-    // Our graph API provides means to listen to graph changes. Users can subscribe
-    // to be notified about changes in the graph by using `on` method. However
-    // in some cases they don't use it. To avoid unnecessary memory consumption
-    // we will not record graph changes until we have at least one subscriber.
-    // Code below supports this optimization.
-    //
-    // Accumulates all changes made during graph updates.
-    // Each change element contains:
-    //  changeType - one of the strings: 'add', 'remove' or 'update';
-    //  node - if change is related to node this property is set to changed graph's node;
-    //  link - if change is related to link this property is set to changed graph's link;
-    changes = [],
-    recordLinkChange = noop,
-    recordNodeChange = noop,
-    enterModification = noop,
-    exitModification = noop;
-
-  // this is our public API:
-  var graphPart = {
-    /**
-     * Adds node to the graph. If node with given id already exists in the graph
-     * its data is extended with whatever comes in 'data' argument.
-     *
-     * @param nodeId the node's identifier. A string or number is preferred.
-     * @param [data] additional data for the node being added. If node already
-     *   exists its data object is augmented with the new one.
-     *
-     * @return {node} The newly added node or node with given id if it already exists.
-     */
-    addNode: addNode,
-
-    /**
-     * Adds a link to the graph. The function always create a new
-     * link between two nodes. If one of the nodes does not exists
-     * a new node is created.
-     *
-     * @param fromId link start node id;
-     * @param toId link end node id;
-     * @param [data] additional data to be set on the new link;
-     *
-     * @return {link} The newly created link
-     */
-    addLink: addLink,
-
-    /**
-     * Removes link from the graph. If link does not exist does nothing.
-     *
-     * @param link - object returned by addLink() or getLinks() methods.
-     *
-     * @returns true if link was removed; false otherwise.
-     */
-    removeLink: removeLink,
-
-    /**
-     * Removes node with given id from the graph. If node does not exist in the graph
-     * does nothing.
-     *
-     * @param nodeId node's identifier passed to addNode() function.
-     *
-     * @returns true if node was removed; false otherwise.
-     */
-    removeNode: removeNode,
-
-    /**
-     * Gets node with given identifier. If node does not exist undefined value is returned.
-     *
-     * @param nodeId requested node identifier;
-     *
-     * @return {node} in with requested identifier or undefined if no such node exists.
-     */
-    getNode: getNode,
-
-    /**
-     * Gets number of nodes in this graph.
-     *
-     * @return number of nodes in the graph.
-     */
-    getNodesCount: function () {
-      return nodesCount;
-    },
-
-    /**
-     * Gets total number of links in the graph.
-     */
-    getLinksCount: function () {
-      return links.length;
-    },
-
-    /**
-     * Gets all links (inbound and outbound) from the node with given id.
-     * If node with given id is not found null is returned.
-     *
-     * @param nodeId requested node identifier.
-     *
-     * @return Array of links from and to requested node if such node exists;
-     *   otherwise null is returned.
-     */
-    getLinks: getLinks,
-
-    /**
-     * Invokes callback on each node of the graph.
-     *
-     * @param {Function(node)} callback Function to be invoked. The function
-     *   is passed one argument: visited node.
-     */
-    forEachNode: forEachNode,
-
-    /**
-     * Invokes callback on every linked (adjacent) node to the given one.
-     *
-     * @param nodeId Identifier of the requested node.
-     * @param {Function(node, link)} callback Function to be called on all linked nodes.
-     *   The function is passed two parameters: adjacent node and link object itself.
-     * @param oriented if true graph treated as oriented.
-     */
-    forEachLinkedNode: forEachLinkedNode,
-
-    /**
-     * Enumerates all links in the graph
-     *
-     * @param {Function(link)} callback Function to be called on all links in the graph.
-     *   The function is passed one parameter: graph's link object.
-     *
-     * Link object contains at least the following fields:
-     *  fromId - node id where link starts;
-     *  toId - node id where link ends,
-     *  data - additional data passed to graph.addLink() method.
-     */
-    forEachLink: forEachLink,
-
-    /**
-     * Suspend all notifications about graph changes until
-     * endUpdate is called.
-     */
-    beginUpdate: enterModification,
-
-    /**
-     * Resumes all notifications about graph changes and fires
-     * graph 'changed' event in case there are any pending changes.
-     */
-    endUpdate: exitModification,
-
-    /**
-     * Removes all nodes and links from the graph.
-     */
-    clear: clear,
-
-    /**
-     * Detects whether there is a link between two nodes.
-     * Operation complexity is O(n) where n - number of links of a node.
-     * NOTE: this function is synonim for getLink()
-     *
-     * @returns link if there is one. null otherwise.
-     */
-    hasLink: getLink,
-
-    /**
-     * Detects whether there is a node with given id
-     * 
-     * Operation complexity is O(1)
-     * NOTE: this function is synonim for getNode()
-     *
-     * @returns node if there is one; Falsy value otherwise.
-     */
-    hasNode: getNode,
-
-    /**
-     * Gets an edge between two nodes.
-     * Operation complexity is O(n) where n - number of links of a node.
-     *
-     * @param {string} fromId link start identifier
-     * @param {string} toId link end identifier
-     *
-     * @returns link if there is one. null otherwise.
-     */
-    getLink: getLink
-  };
-
-  // this will add `on()` and `fire()` methods.
-  eventify(graphPart);
-
-  monitorSubscribers();
-
-  return graphPart;
-
-  function monitorSubscribers() {
-    var realOn = graphPart.on;
-
-    // replace real `on` with our temporary on, which will trigger change
-    // modification monitoring:
-    graphPart.on = on;
-
-    function on() {
-      // now it's time to start tracking stuff:
-      graphPart.beginUpdate = enterModification = enterModificationReal;
-      graphPart.endUpdate = exitModification = exitModificationReal;
-      recordLinkChange = recordLinkChangeReal;
-      recordNodeChange = recordNodeChangeReal;
-
-      // this will replace current `on` method with real pub/sub from `eventify`.
-      graphPart.on = realOn;
-      // delegate to real `on` handler:
-      return realOn.apply(graphPart, arguments);
-    }
-  }
-
-  function recordLinkChangeReal(link, changeType) {
-    changes.push({
-      link: link,
-      changeType: changeType
-    });
-  }
-
-  function recordNodeChangeReal(node, changeType) {
-    changes.push({
-      node: node,
-      changeType: changeType
-    });
-  }
-
-  function addNode(nodeId, data) {
-    if (nodeId === undefined) {
-      throw new Error('Invalid node identifier');
-    }
-
-    enterModification();
-
-    var node = getNode(nodeId);
-    if (!node) {
-      node = new Node(nodeId, data);
-      nodesCount++;
-      recordNodeChange(node, 'add');
-    } else {
-      node.data = data;
-      recordNodeChange(node, 'update');
-    }
-
-    nodes[nodeId] = node;
-
-    exitModification();
-    return node;
-  }
-
-  function getNode(nodeId) {
-    return nodes[nodeId];
-  }
-
-  function removeNode(nodeId) {
-    var node = getNode(nodeId);
-    if (!node) {
-      return false;
-    }
-
-    enterModification();
-
-    var prevLinks = node.links;
-    if (prevLinks) {
-      node.links = null;
-      for(var i = 0; i < prevLinks.length; ++i) {
-        removeLink(prevLinks[i]);
-      }
-    }
-
-    delete nodes[nodeId];
-    nodesCount--;
-
-    recordNodeChange(node, 'remove');
-
-    exitModification();
-
-    return true;
-  }
-
-
-  function addLink(fromId, toId, data) {
-    enterModification();
-
-    var fromNode = getNode(fromId) || addNode(fromId);
-    var toNode = getNode(toId) || addNode(toId);
-
-    var link = createLink(fromId, toId, data);
-
-    links.push(link);
-
-    // TODO: this is not cool. On large graphs potentially would consume more memory.
-    addLinkToNode(fromNode, link);
-    if (fromId !== toId) {
-      // make sure we are not duplicating links for self-loops
-      addLinkToNode(toNode, link);
-    }
-
-    recordLinkChange(link, 'add');
-
-    exitModification();
-
-    return link;
-  }
-
-  function createSingleLink(fromId, toId, data) {
-    var linkId = makeLinkId(fromId, toId);
-    return new Link(fromId, toId, data, linkId);
-  }
-
-  function createUniqueLink(fromId, toId, data) {
-    // TODO: Get rid of this method.
-    var linkId = makeLinkId(fromId, toId);
-    var isMultiEdge = multiEdges.hasOwnProperty(linkId);
-    if (isMultiEdge || getLink(fromId, toId)) {
-      if (!isMultiEdge) {
-        multiEdges[linkId] = 0;
-      }
-      var suffix = '@' + (++multiEdges[linkId]);
-      linkId = makeLinkId(fromId + suffix, toId + suffix);
-    }
-
-    return new Link(fromId, toId, data, linkId);
-  }
-
-  function getLinks(nodeId) {
-    var node = getNode(nodeId);
-    return node ? node.links : null;
-  }
-
-  function removeLink(link) {
-    if (!link) {
-      return false;
-    }
-    var idx = indexOfElementInArray(link, links);
-    if (idx < 0) {
-      return false;
-    }
-
-    enterModification();
-
-    links.splice(idx, 1);
-
-    var fromNode = getNode(link.fromId);
-    var toNode = getNode(link.toId);
-
-    if (fromNode) {
-      idx = indexOfElementInArray(link, fromNode.links);
-      if (idx >= 0) {
-        fromNode.links.splice(idx, 1);
-      }
-    }
-
-    if (toNode) {
-      idx = indexOfElementInArray(link, toNode.links);
-      if (idx >= 0) {
-        toNode.links.splice(idx, 1);
-      }
-    }
-
-    recordLinkChange(link, 'remove');
-
-    exitModification();
-
-    return true;
-  }
-
-  function getLink(fromNodeId, toNodeId) {
-    // TODO: Use sorted links to speed this up
-    var node = getNode(fromNodeId),
-      i;
-    if (!node || !node.links) {
-      return null;
-    }
-
-    for (i = 0; i < node.links.length; ++i) {
-      var link = node.links[i];
-      if (link.fromId === fromNodeId && link.toId === toNodeId) {
-        return link;
-      }
-    }
-
-    return null; // no link.
-  }
-
-  function clear() {
-    enterModification();
-    forEachNode(function(node) {
-      removeNode(node.id);
-    });
-    exitModification();
-  }
-
-  function forEachLink(callback) {
-    var i, length;
-    if (typeof callback === 'function') {
-      for (i = 0, length = links.length; i < length; ++i) {
-        callback(links[i]);
-      }
-    }
-  }
-
-  function forEachLinkedNode(nodeId, callback, oriented) {
-    var node = getNode(nodeId);
-
-    if (node && node.links && typeof callback === 'function') {
-      if (oriented) {
-        return forEachOrientedLink(node.links, nodeId, callback);
-      } else {
-        return forEachNonOrientedLink(node.links, nodeId, callback);
-      }
-    }
-  }
-
-  function forEachNonOrientedLink(links, nodeId, callback) {
-    var quitFast;
-    for (var i = 0; i < links.length; ++i) {
-      var link = links[i];
-      var linkedNodeId = link.fromId === nodeId ? link.toId : link.fromId;
-
-      quitFast = callback(nodes[linkedNodeId], link);
-      if (quitFast) {
-        return true; // Client does not need more iterations. Break now.
-      }
-    }
-  }
-
-  function forEachOrientedLink(links, nodeId, callback) {
-    var quitFast;
-    for (var i = 0; i < links.length; ++i) {
-      var link = links[i];
-      if (link.fromId === nodeId) {
-        quitFast = callback(nodes[link.toId], link);
-        if (quitFast) {
-          return true; // Client does not need more iterations. Break now.
-        }
-      }
-    }
-  }
-
-  // we will not fire anything until users of this library explicitly call `on()`
-  // method.
-  function noop() {}
-
-  // Enter, Exit modification allows bulk graph updates without firing events.
-  function enterModificationReal() {
-    suspendEvents += 1;
-  }
-
-  function exitModificationReal() {
-    suspendEvents -= 1;
-    if (suspendEvents === 0 && changes.length > 0) {
-      graphPart.fire('changed', changes);
-      changes.length = 0;
-    }
-  }
-
-  function createNodeIterator() {
-    // Object.keys iterator is 1.3x faster than `for in` loop.
-    // See `https://github.com/anvaka/ngraph.graph/tree/bench-for-in-vs-obj-keys`
-    // branch for perf test
-    return Object.keys ? objectKeysIterator : forInIterator;
-  }
-
-  function objectKeysIterator(callback) {
-    if (typeof callback !== 'function') {
-      return;
-    }
-
-    var keys = Object.keys(nodes);
-    for (var i = 0; i < keys.length; ++i) {
-      if (callback(nodes[keys[i]])) {
-        return true; // client doesn't want to proceed. Return.
-      }
-    }
-  }
-
-  function forInIterator(callback) {
-    if (typeof callback !== 'function') {
-      return;
-    }
-    var node;
-
-    for (node in nodes) {
-      if (callback(nodes[node])) {
-        return true; // client doesn't want to proceed. Return.
-      }
-    }
-  }
-}
-
-// need this for old browsers. Should this be a separate module?
-function indexOfElementInArray(element, array) {
-  if (!array) return -1;
-
-  if (array.indexOf) {
-    return array.indexOf(element);
-  }
-
-  var len = array.length,
-    i;
-
-  for (i = 0; i < len; i += 1) {
-    if (array[i] === element) {
-      return i;
-    }
-  }
-
-  return -1;
-}
-
-/**
- * Internal structure to represent node;
- */
-function Node(id, data) {
-  this.id = id;
-  this.links = null;
-  this.data = data;
-}
-
-function addLinkToNode(node, link) {
-  if (node.links) {
-    node.links.push(link);
-  } else {
-    node.links = [link];
-  }
-}
-
-/**
- * Internal structure to represent links;
- */
-function Link(fromId, toId, data, id) {
-  this.fromId = fromId;
-  this.toId = toId;
-  this.data = data;
-  this.id = id;
-}
-
-function hashCode(str) {
-  var hash = 0, i, chr, len;
-  if (str.length == 0) return hash;
-  for (i = 0, len = str.length; i < len; i++) {
-    chr   = str.charCodeAt(i);
-    hash  = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-}
-
-function makeLinkId(fromId, toId) {
-  return fromId.toString() + '👉 ' + toId.toString();
-}
-
-},{"ngraph.events":10}],20:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
+arguments[4][15][0].apply(exports,arguments)
+},{"dup":15,"ngraph.events":10}],24:[function(require,module,exports){
 module.exports = merge;
 
 /**
@@ -5810,7 +5217,7 @@ function merge(target, options) {
   return target;
 }
 
-},{}],21:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 module.exports = {
   Body: Body,
   Vector2d: Vector2d,
@@ -5877,7 +5284,7 @@ Vector3d.prototype.reset = function () {
   this.x = this.y = this.z = 0;
 };
 
-},{}],22:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /**
  * Manages a simulation of physical forces acting on bodies and springs.
  */
@@ -6155,7 +5562,7 @@ function physicsSimulator(settings) {
   }
 };
 
-},{"./lib/bounds":23,"./lib/createBody":24,"./lib/dragForce":25,"./lib/eulerIntegrator":26,"./lib/spring":27,"./lib/springForce":28,"ngraph.events":10,"ngraph.expose":11,"ngraph.merge":20,"ngraph.quadtreebh":29}],23:[function(require,module,exports){
+},{"./lib/bounds":27,"./lib/createBody":28,"./lib/dragForce":29,"./lib/eulerIntegrator":30,"./lib/spring":31,"./lib/springForce":32,"ngraph.events":10,"ngraph.expose":11,"ngraph.merge":24,"ngraph.quadtreebh":33}],27:[function(require,module,exports){
 module.exports = function (bodies, settings) {
   var random = require('ngraph.random').random(42);
   var boundingBox =  { x1: 0, y1: 0, x2: 0, y2: 0 };
@@ -6237,14 +5644,14 @@ module.exports = function (bodies, settings) {
   }
 }
 
-},{"ngraph.random":33}],24:[function(require,module,exports){
+},{"ngraph.random":37}],28:[function(require,module,exports){
 var physics = require('ngraph.physics.primitives');
 
 module.exports = function(pos) {
   return new physics.Body(pos);
 }
 
-},{"ngraph.physics.primitives":21}],25:[function(require,module,exports){
+},{"ngraph.physics.primitives":25}],29:[function(require,module,exports){
 /**
  * Represents drag force, which reduces force value on each step by given
  * coefficient.
@@ -6273,7 +5680,7 @@ module.exports = function (options) {
   return api;
 };
 
-},{"ngraph.expose":11,"ngraph.merge":20}],26:[function(require,module,exports){
+},{"ngraph.expose":11,"ngraph.merge":24}],30:[function(require,module,exports){
 /**
  * Performs forces integration, using given timestep. Uses Euler method to solve
  * differential equation (http://en.wikipedia.org/wiki/Euler_method ).
@@ -6304,6 +5711,8 @@ function integrate(bodies, timeStep) {
         v = Math.sqrt(vx * vx + vy * vy);
 
     if (v > 1) {
+      // We normalize it so that we move within timeStep range. 
+      // for the case when v <= 1 - we let velocity to fade out.
       body.velocity.x = vx / v;
       body.velocity.y = vy / v;
     }
@@ -6320,7 +5729,7 @@ function integrate(bodies, timeStep) {
   return (tx * tx + ty * ty)/max;
 }
 
-},{}],27:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = Spring;
 
 /**
@@ -6336,7 +5745,7 @@ function Spring(fromBody, toBody, length, coeff, weight) {
     this.weight = typeof weight === 'number' ? weight : 1;
 };
 
-},{}],28:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /**
  * Represents spring force, which updates forces acting on two bodies, conntected
  * by a spring.
@@ -6388,7 +5797,7 @@ module.exports = function (options) {
   return api;
 }
 
-},{"ngraph.expose":11,"ngraph.merge":20,"ngraph.random":33}],29:[function(require,module,exports){
+},{"ngraph.expose":11,"ngraph.merge":24,"ngraph.random":37}],33:[function(require,module,exports){
 /**
  * This is Barnes Hut simulation algorithm for 2d case. Implementation
  * is highly optimized (avoids recusion and gc pressure)
@@ -6717,7 +6126,7 @@ function setChild(node, idx, child) {
   else if (idx === 3) node.quad3 = child;
 }
 
-},{"./insertStack":30,"./isSamePosition":31,"./node":32,"ngraph.random":33}],30:[function(require,module,exports){
+},{"./insertStack":34,"./isSamePosition":35,"./node":36,"ngraph.random":37}],34:[function(require,module,exports){
 module.exports = InsertStack;
 
 /**
@@ -6761,7 +6170,7 @@ function InsertStackElement(node, body) {
     this.body = body; // physical body which needs to be inserted to node
 }
 
-},{}],31:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = function isSamePosition(point1, point2) {
     var dx = Math.abs(point1.x - point2.x);
     var dy = Math.abs(point1.y - point2.y);
@@ -6769,7 +6178,7 @@ module.exports = function isSamePosition(point1, point2) {
     return (dx < 1e-8 && dy < 1e-8);
 };
 
-},{}],32:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /**
  * Internal data structure to represent 2D QuadTree node
  */
@@ -6801,94 +6210,9 @@ module.exports = function Node() {
   this.right = 0;
 };
 
-},{}],33:[function(require,module,exports){
-module.exports = {
-  random: random,
-  randomIterator: randomIterator
-};
-
-/**
- * Creates seeded PRNG with two methods:
- *   next() and nextDouble()
- */
-function random(inputSeed) {
-  var seed = typeof inputSeed === 'number' ? inputSeed : (+ new Date());
-  var randomFunc = function() {
-      // Robert Jenkins' 32 bit integer hash function.
-      seed = ((seed + 0x7ed55d16) + (seed << 12))  & 0xffffffff;
-      seed = ((seed ^ 0xc761c23c) ^ (seed >>> 19)) & 0xffffffff;
-      seed = ((seed + 0x165667b1) + (seed << 5))   & 0xffffffff;
-      seed = ((seed + 0xd3a2646c) ^ (seed << 9))   & 0xffffffff;
-      seed = ((seed + 0xfd7046c5) + (seed << 3))   & 0xffffffff;
-      seed = ((seed ^ 0xb55a4f09) ^ (seed >>> 16)) & 0xffffffff;
-      return (seed & 0xfffffff) / 0x10000000;
-  };
-
-  return {
-      /**
-       * Generates random integer number in the range from 0 (inclusive) to maxValue (exclusive)
-       *
-       * @param maxValue Number REQUIRED. Ommitting this number will result in NaN values from PRNG.
-       */
-      next : function (maxValue) {
-          return Math.floor(randomFunc() * maxValue);
-      },
-
-      /**
-       * Generates random double number in the range from 0 (inclusive) to 1 (exclusive)
-       * This function is the same as Math.random() (except that it could be seeded)
-       */
-      nextDouble : function () {
-          return randomFunc();
-      }
-  };
-}
-
-/*
- * Creates iterator over array, which returns items of array in random order
- * Time complexity is guaranteed to be O(n);
- */
-function randomIterator(array, customRandom) {
-    var localRandom = customRandom || random();
-    if (typeof localRandom.next !== 'function') {
-      throw new Error('customRandom does not match expected API: next() function is missing');
-    }
-
-    return {
-        forEach : function (callback) {
-            var i, j, t;
-            for (i = array.length - 1; i > 0; --i) {
-                j = localRandom.next(i + 1); // i inclusive
-                t = array[j];
-                array[j] = array[i];
-                array[i] = t;
-
-                callback(t);
-            }
-
-            if (array.length) {
-                callback(array[0]);
-            }
-        },
-
-        /**
-         * Shuffles array randomly, in place.
-         */
-        shuffle : function () {
-            var i, j, t;
-            for (i = array.length - 1; i > 0; --i) {
-                j = localRandom.next(i + 1); // i inclusive
-                t = array[j];
-                array[j] = array[i];
-                array[i] = t;
-            }
-
-            return array;
-        }
-    };
-}
-
-},{}],34:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
+arguments[4][22][0].apply(exports,arguments)
+},{"dup":22}],38:[function(require,module,exports){
 module.exports = todot;
 module.exports.write = write;
 
@@ -6964,7 +6288,7 @@ function dotEscape(id) {
 }
 
 
-},{}],35:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = save;
 
 function save(graph, customNodeTransform, customLinkTransform) {
@@ -7020,7 +6344,7 @@ function save(graph, customNodeTransform, customLinkTransform) {
   }
 }
 
-},{}],36:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = svg;
 
 svg.compile = require('./lib/compile');
@@ -7133,7 +6457,7 @@ function augment(element) {
   }
 }
 
-},{"./lib/compile":37,"./lib/compile_template":38,"add-event-listener":1}],37:[function(require,module,exports){
+},{"./lib/compile":41,"./lib/compile_template":42,"add-event-listener":1}],41:[function(require,module,exports){
 var parser = require('./domparser.js');
 var svg = require('../');
 
@@ -7161,7 +6485,7 @@ function addNamespaces(text) {
   }
 }
 
-},{"../":36,"./domparser.js":39}],38:[function(require,module,exports){
+},{"../":40,"./domparser.js":43}],42:[function(require,module,exports){
 module.exports = template;
 
 var BINDING_EXPR = /{{(.+?)}}/;
@@ -7255,7 +6579,7 @@ function bindTextContent(element, allBindings) {
   }
 }
 
-},{}],39:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = createDomparser();
 
 function createDomparser() {
@@ -7271,7 +6595,7 @@ function fail() {
   throw new Error('DOMParser is not supported by this platform. Please open issue here https://github.com/anvaka/simplesvg');
 }
 
-},{}],40:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 var centrality = require('ngraph.centrality');
 
 module.exports = centralityWrapper;
@@ -7309,7 +6633,7 @@ function toVivaGraphCentralityFormat(centrality) {
   }
 }
 
-},{"ngraph.centrality":5}],41:[function(require,module,exports){
+},{"ngraph.centrality":5}],45:[function(require,module,exports){
 /**
  * @fileOverview Contains collection of primitive operations under graph.
  *
@@ -7344,7 +6668,7 @@ function operations() {
     };
 };
 
-},{}],42:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -7393,7 +6717,7 @@ function domInputManager(graph, graphics) {
   }
 }
 
-},{"./dragndrop.js":43}],43:[function(require,module,exports){
+},{"./dragndrop.js":47}],47:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -7676,7 +7000,7 @@ function dragndrop(element) {
     };
 }
 
-},{"../Utils/browserInfo.js":47,"../Utils/documentEvents.js":48,"../Utils/findElementPosition.js":49}],44:[function(require,module,exports){
+},{"../Utils/browserInfo.js":51,"../Utils/documentEvents.js":53,"../Utils/findElementPosition.js":54}],48:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -7747,7 +7071,7 @@ function webglInputManager(graph, graphics) {
     };
 }
 
-},{"../WebGL/webglInputEvents.js":65}],45:[function(require,module,exports){
+},{"../WebGL/webglInputEvents.js":70}],49:[function(require,module,exports){
 module.exports = constant;
 
 var merge = require('ngraph.merge');
@@ -7946,7 +7270,7 @@ function constant(graph, userSettings) {
     }
 }
 
-},{"../Utils/rect.js":53,"ngraph.merge":20,"ngraph.random":33}],46:[function(require,module,exports){
+},{"../Utils/rect.js":58,"ngraph.merge":24,"ngraph.random":37}],50:[function(require,module,exports){
 /**
  * This module provides compatibility layer with 0.6.x library. It will be
  * removed in the next version
@@ -7991,7 +7315,7 @@ function backwardCompatibleEvents(g) {
   }
 }
 
-},{"ngraph.events":10}],47:[function(require,module,exports){
+},{"ngraph.events":10}],51:[function(require,module,exports){
 module.exports = browserInfo();
 
 function browserInfo() {
@@ -8020,7 +7344,681 @@ function browserInfo() {
   };
 }
 
-},{}],48:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
+/**
+ * This module provides a lookup table for color names.
+ * Author: Jonn Smith
+ */
+
+// X11 color specs:
+// (Taken from https://www.graphviz.org/doc/info/colors.html)
+
+module.exports = colorLookup;
+
+function colorLookup(colorName) {
+    c = colorDict[colorName];
+    return (c ? c : colorName);
+}
+
+var colorDict = {};
+colorDict.aliceblue="#f0f8ff";
+colorDict.antiquewhite="#faebd7";
+colorDict.antiquewhite1="#ffefdb";
+colorDict.antiquewhite2="#eedfcc";
+colorDict.antiquewhite3="#cdc0b0";
+colorDict.antiquewhite4="#8b8378";
+colorDict.aquamarine="#7fffd4";
+colorDict.aquamarine1="#7fffd4";
+colorDict.aquamarine2="#76eec6";
+colorDict.aquamarine3="#66cdaa";
+colorDict.aquamarine4="#458b74";
+colorDict.azure="#f0ffff";
+colorDict.azure1="#f0ffff";
+colorDict.azure2="#e0eeee";
+colorDict.azure3="#c1cdcd";
+colorDict.azure4="#838b8b";
+colorDict.beige="#f5f5dc";
+colorDict.bisque="#ffe4c4";
+colorDict.bisque1="#ffe4c4";
+colorDict.bisque2="#eed5b7";
+colorDict.bisque3="#cdb79e";
+colorDict.bisque4="#8b7d6b";
+colorDict.black="#000000";
+colorDict.blanchedalmond="#ffebcd";
+colorDict.blue="#0000ff";
+colorDict.blue1="#0000ff";
+colorDict.blue2="#0000ee";
+colorDict.blue3="#0000cd";
+colorDict.blue4="#00008b";
+colorDict.blueviolet="#8a2be2";
+colorDict.brown="#a52a2a";
+colorDict.brown1="#ff4040";
+colorDict.brown2="#ee3b3b";
+colorDict.brown3="#cd3333";
+colorDict.brown4="#8b2323";
+colorDict.burlywood="#deb887";
+colorDict.burlywood1="#ffd39b";
+colorDict.burlywood2="#eec591";
+colorDict.burlywood3="#cdaa7d";
+colorDict.burlywood4="#8b7355";
+colorDict.cadetblue="#5f9ea0";
+colorDict.cadetblue1="#98f5ff";
+colorDict.cadetblue2="#8ee5ee";
+colorDict.cadetblue3="#7ac5cd";
+colorDict.cadetblue4="#53868b";
+colorDict.chartreuse="#7fff00";
+colorDict.chartreuse1="#7fff00";
+colorDict.chartreuse2="#76ee00";
+colorDict.chartreuse3="#66cd00";
+colorDict.chartreuse4="#458b00";
+colorDict.chocolate="#d2691e";
+colorDict.chocolate1="#ff7f24";
+colorDict.chocolate2="#ee7621";
+colorDict.chocolate3="#cd661d";
+colorDict.chocolate4="#8b4513";
+colorDict.coral="#ff7f50";
+colorDict.coral1="#ff7256";
+colorDict.coral2="#ee6a50";
+colorDict.coral3="#cd5b45";
+colorDict.coral4="#8b3e2f";
+colorDict.cornflowerblue="#6495ed";
+colorDict.cornsilk="#fff8dc";
+colorDict.cornsilk1="#fff8dc";
+colorDict.cornsilk2="#eee8cd";
+colorDict.cornsilk3="#cdc8b1";
+colorDict.cornsilk4="#8b8878";
+colorDict.crimson="#dc143c";
+colorDict.cyan="#00ffff";
+colorDict.cyan1="#00ffff";
+colorDict.cyan2="#00eeee";
+colorDict.cyan3="#00cdcd";
+colorDict.cyan4="#008b8b";
+colorDict.darkgoldenrod="#b8860b";
+colorDict.darkgoldenrod1="#ffb90f";
+colorDict.darkgoldenrod2="#eead0e";
+colorDict.darkgoldenrod3="#cd950c";
+colorDict.darkgoldenrod4="#8b6508";
+colorDict.darkgreen="#006400";
+colorDict.darkkhaki="#bdb76b";
+colorDict.darkolivegreen="#556b2f";
+colorDict.darkolivegreen1="#caff70";
+colorDict.darkolivegreen2="#bcee68";
+colorDict.darkolivegreen3="#a2cd5a";
+colorDict.darkolivegreen4="#6e8b3d";
+colorDict.darkorange="#ff8c00";
+colorDict.darkorange1="#ff7f00";
+colorDict.darkorange2="#ee7600";
+colorDict.darkorange3="#cd6600";
+colorDict.darkorange4="#8b4500";
+colorDict.darkorchid="#9932cc";
+colorDict.darkorchid1="#bf3eff";
+colorDict.darkorchid2="#b23aee";
+colorDict.darkorchid3="#9a32cd";
+colorDict.darkorchid4="#68228b";
+colorDict.darksalmon="#e9967a";
+colorDict.darkseagreen="#8fbc8f";
+colorDict.darkseagreen1="#c1ffc1";
+colorDict.darkseagreen2="#b4eeb4";
+colorDict.darkseagreen3="#9bcd9b";
+colorDict.darkseagreen4="#698b69";
+colorDict.darkslateblue="#483d8b";
+colorDict.darkslategray="#2f4f4f";
+colorDict.darkslategray1="#97ffff";
+colorDict.darkslategray2="#8deeee";
+colorDict.darkslategray3="#79cdcd";
+colorDict.darkslategray4="#528b8b";
+colorDict.darkslategrey="#2f4f4f";
+colorDict.darkturquoise="#00ced1";
+colorDict.darkviolet="#9400d3";
+colorDict.deeppink="#ff1493";
+colorDict.deeppink1="#ff1493";
+colorDict.deeppink2="#ee1289";
+colorDict.deeppink3="#cd1076";
+colorDict.deeppink4="#8b0a50";
+colorDict.deepskyblue="#00bfff";
+colorDict.deepskyblue1="#00bfff";
+colorDict.deepskyblue2="#00b2ee";
+colorDict.deepskyblue3="#009acd";
+colorDict.deepskyblue4="#00688b";
+colorDict.dimgray="#696969";
+colorDict.dimgrey="#696969";
+colorDict.dodgerblue="#1e90ff";
+colorDict.dodgerblue1="#1e90ff";
+colorDict.dodgerblue2="#1c86ee";
+colorDict.dodgerblue3="#1874cd";
+colorDict.dodgerblue4="#104e8b";
+colorDict.firebrick="#b22222";
+colorDict.firebrick1="#ff3030";
+colorDict.firebrick2="#ee2c2c";
+colorDict.firebrick3="#cd2626";
+colorDict.firebrick4="#8b1a1a";
+colorDict.floralwhite="#fffaf0";
+colorDict.forestgreen="#228b22";
+colorDict.gainsboro="#dcdcdc";
+colorDict.ghostwhite="#f8f8ff";
+colorDict.gold="#ffd700";
+colorDict.gold1="#ffd700";
+colorDict.gold2="#eec900";
+colorDict.gold3="#cdad00";
+colorDict.gold4="#8b7500";
+colorDict.goldenrod="#daa520";
+colorDict.goldenrod1="#ffc125";
+colorDict.goldenrod2="#eeb422";
+colorDict.goldenrod3="#cd9b1d";
+colorDict.goldenrod4="#8b6914";
+colorDict.gray="#c0c0c0";
+colorDict.gray0="#000000";
+colorDict.gray1="#030303";
+colorDict.gray10="#1a1a1a";
+colorDict.gray100="#ffffff";
+colorDict.gray11="#1c1c1c";
+colorDict.gray12="#1f1f1f";
+colorDict.gray13="#212121";
+colorDict.gray14="#242424";
+colorDict.gray15="#262626";
+colorDict.gray16="#292929";
+colorDict.gray17="#2b2b2b";
+colorDict.gray18="#2e2e2e";
+colorDict.gray19="#303030";
+colorDict.gray2="#050505";
+colorDict.gray20="#333333";
+colorDict.gray21="#363636";
+colorDict.gray22="#383838";
+colorDict.gray23="#3b3b3b";
+colorDict.gray24="#3d3d3d";
+colorDict.gray25="#404040";
+colorDict.gray26="#424242";
+colorDict.gray27="#454545";
+colorDict.gray28="#474747";
+colorDict.gray29="#4a4a4a";
+colorDict.gray3="#080808";
+colorDict.gray30="#4d4d4d";
+colorDict.gray31="#4f4f4f";
+colorDict.gray32="#525252";
+colorDict.gray33="#545454";
+colorDict.gray34="#575757";
+colorDict.gray35="#595959";
+colorDict.gray36="#5c5c5c";
+colorDict.gray37="#5e5e5e";
+colorDict.gray38="#616161";
+colorDict.gray39="#636363";
+colorDict.gray4="#0a0a0a";
+colorDict.gray40="#666666";
+colorDict.gray41="#696969";
+colorDict.gray42="#6b6b6b";
+colorDict.gray43="#6e6e6e";
+colorDict.gray44="#707070";
+colorDict.gray45="#737373";
+colorDict.gray46="#757575";
+colorDict.gray47="#787878";
+colorDict.gray48="#7a7a7a";
+colorDict.gray49="#7d7d7d";
+colorDict.gray5="#0d0d0d";
+colorDict.gray50="#7f7f7f";
+colorDict.gray51="#828282";
+colorDict.gray52="#858585";
+colorDict.gray53="#878787";
+colorDict.gray54="#8a8a8a";
+colorDict.gray55="#8c8c8c";
+colorDict.gray56="#8f8f8f";
+colorDict.gray57="#919191";
+colorDict.gray58="#949494";
+colorDict.gray59="#969696";
+colorDict.gray6="#0f0f0f";
+colorDict.gray60="#999999";
+colorDict.gray61="#9c9c9c";
+colorDict.gray62="#9e9e9e";
+colorDict.gray63="#a1a1a1";
+colorDict.gray64="#a3a3a3";
+colorDict.gray65="#a6a6a6";
+colorDict.gray66="#a8a8a8";
+colorDict.gray67="#ababab";
+colorDict.gray68="#adadad";
+colorDict.gray69="#b0b0b0";
+colorDict.gray7="#121212";
+colorDict.gray70="#b3b3b3";
+colorDict.gray71="#b5b5b5";
+colorDict.gray72="#b8b8b8";
+colorDict.gray73="#bababa";
+colorDict.gray74="#bdbdbd";
+colorDict.gray75="#bfbfbf";
+colorDict.gray76="#c2c2c2";
+colorDict.gray77="#c4c4c4";
+colorDict.gray78="#c7c7c7";
+colorDict.gray79="#c9c9c9";
+colorDict.gray8="#141414";
+colorDict.gray80="#cccccc";
+colorDict.gray81="#cfcfcf";
+colorDict.gray82="#d1d1d1";
+colorDict.gray83="#d4d4d4";
+colorDict.gray84="#d6d6d6";
+colorDict.gray85="#d9d9d9";
+colorDict.gray86="#dbdbdb";
+colorDict.gray87="#dedede";
+colorDict.gray88="#e0e0e0";
+colorDict.gray89="#e3e3e3";
+colorDict.gray9="#171717";
+colorDict.gray90="#e5e5e5";
+colorDict.gray91="#e8e8e8";
+colorDict.gray92="#ebebeb";
+colorDict.gray93="#ededed";
+colorDict.gray94="#f0f0f0";
+colorDict.gray95="#f2f2f2";
+colorDict.gray96="#f5f5f5";
+colorDict.gray97="#f7f7f7";
+colorDict.gray98="#fafafa";
+colorDict.gray99="#fcfcfc";
+colorDict.green="#00ff00";
+colorDict.green1="#00ff00";
+colorDict.green2="#00ee00";
+colorDict.green3="#00cd00";
+colorDict.green4="#008b00";
+colorDict.greenyellow="#adff2f";
+colorDict.grey="#c0c0c0";
+colorDict.grey0="#000000";
+colorDict.grey1="#030303";
+colorDict.grey10="#1a1a1a";
+colorDict.grey100="#ffffff";
+colorDict.grey11="#1c1c1c";
+colorDict.grey12="#1f1f1f";
+colorDict.grey13="#212121";
+colorDict.grey14="#242424";
+colorDict.grey15="#262626";
+colorDict.grey16="#292929";
+colorDict.grey17="#2b2b2b";
+colorDict.grey18="#2e2e2e";
+colorDict.grey19="#303030";
+colorDict.grey2="#050505";
+colorDict.grey20="#333333";
+colorDict.grey21="#363636";
+colorDict.grey22="#383838";
+colorDict.grey23="#3b3b3b";
+colorDict.grey24="#3d3d3d";
+colorDict.grey25="#404040";
+colorDict.grey26="#424242";
+colorDict.grey27="#454545";
+colorDict.grey28="#474747";
+colorDict.grey29="#4a4a4a";
+colorDict.grey3="#080808";
+colorDict.grey30="#4d4d4d";
+colorDict.grey31="#4f4f4f";
+colorDict.grey32="#525252";
+colorDict.grey33="#545454";
+colorDict.grey34="#575757";
+colorDict.grey35="#595959";
+colorDict.grey36="#5c5c5c";
+colorDict.grey37="#5e5e5e";
+colorDict.grey38="#616161";
+colorDict.grey39="#636363";
+colorDict.grey4="#0a0a0a";
+colorDict.grey40="#666666";
+colorDict.grey41="#696969";
+colorDict.grey42="#6b6b6b";
+colorDict.grey43="#6e6e6e";
+colorDict.grey44="#707070";
+colorDict.grey45="#737373";
+colorDict.grey46="#757575";
+colorDict.grey47="#787878";
+colorDict.grey48="#7a7a7a";
+colorDict.grey49="#7d7d7d";
+colorDict.grey5="#0d0d0d";
+colorDict.grey50="#7f7f7f";
+colorDict.grey51="#828282";
+colorDict.grey52="#858585";
+colorDict.grey53="#878787";
+colorDict.grey54="#8a8a8a";
+colorDict.grey55="#8c8c8c";
+colorDict.grey56="#8f8f8f";
+colorDict.grey57="#919191";
+colorDict.grey58="#949494";
+colorDict.grey59="#969696";
+colorDict.grey6="#0f0f0f";
+colorDict.grey60="#999999";
+colorDict.grey61="#9c9c9c";
+colorDict.grey62="#9e9e9e";
+colorDict.grey63="#a1a1a1";
+colorDict.grey64="#a3a3a3";
+colorDict.grey65="#a6a6a6";
+colorDict.grey66="#a8a8a8";
+colorDict.grey67="#ababab";
+colorDict.grey68="#adadad";
+colorDict.grey69="#b0b0b0";
+colorDict.grey7="#121212";
+colorDict.grey70="#b3b3b3";
+colorDict.grey71="#b5b5b5";
+colorDict.grey72="#b8b8b8";
+colorDict.grey73="#bababa";
+colorDict.grey74="#bdbdbd";
+colorDict.grey75="#bfbfbf";
+colorDict.grey76="#c2c2c2";
+colorDict.grey77="#c4c4c4";
+colorDict.grey78="#c7c7c7";
+colorDict.grey79="#c9c9c9";
+colorDict.grey8="#141414";
+colorDict.grey80="#cccccc";
+colorDict.grey81="#cfcfcf";
+colorDict.grey82="#d1d1d1";
+colorDict.grey83="#d4d4d4";
+colorDict.grey84="#d6d6d6";
+colorDict.grey85="#d9d9d9";
+colorDict.grey86="#dbdbdb";
+colorDict.grey87="#dedede";
+colorDict.grey88="#e0e0e0";
+colorDict.grey89="#e3e3e3";
+colorDict.grey9="#171717";
+colorDict.grey90="#e5e5e5";
+colorDict.grey91="#e8e8e8";
+colorDict.grey92="#ebebeb";
+colorDict.grey93="#ededed";
+colorDict.grey94="#f0f0f0";
+colorDict.grey95="#f2f2f2";
+colorDict.grey96="#f5f5f5";
+colorDict.grey97="#f7f7f7";
+colorDict.grey98="#fafafa";
+colorDict.grey99="#fcfcfc";
+colorDict.honeydew="#f0fff0";
+colorDict.honeydew1="#f0fff0";
+colorDict.honeydew2="#e0eee0";
+colorDict.honeydew3="#c1cdc1";
+colorDict.honeydew4="#838b83";
+colorDict.hotpink="#ff69b4";
+colorDict.hotpink1="#ff6eb4";
+colorDict.hotpink2="#ee6aa7";
+colorDict.hotpink3="#cd6090";
+colorDict.hotpink4="#8b3a62";
+colorDict.indianred="#cd5c5c";
+colorDict.indianred1="#ff6a6a";
+colorDict.indianred2="#ee6363";
+colorDict.indianred3="#cd5555";
+colorDict.indianred4="#8b3a3a";
+colorDict.indigo="#4b0082";
+colorDict.invis="#fffffe";
+colorDict.ivory="#fffff0";
+colorDict.ivory1="#fffff0";
+colorDict.ivory2="#eeeee0";
+colorDict.ivory3="#cdcdc1";
+colorDict.ivory4="#8b8b83";
+colorDict.khaki="#f0e68c";
+colorDict.khaki1="#fff68f";
+colorDict.khaki2="#eee685";
+colorDict.khaki3="#cdc673";
+colorDict.khaki4="#8b864e";
+colorDict.lavender="#e6e6fa";
+colorDict.lavenderblush="#fff0f5";
+colorDict.lavenderblush1="#fff0f5";
+colorDict.lavenderblush2="#eee0e5";
+colorDict.lavenderblush3="#cdc1c5";
+colorDict.lavenderblush4="#8b8386";
+colorDict.lawngreen="#7cfc00";
+colorDict.lemonchiffon="#fffacd";
+colorDict.lemonchiffon1="#fffacd";
+colorDict.lemonchiffon2="#eee9bf";
+colorDict.lemonchiffon3="#cdc9a5";
+colorDict.lemonchiffon4="#8b8970";
+colorDict.lightblue="#add8e6";
+colorDict.lightblue1="#bfefff";
+colorDict.lightblue2="#b2dfee";
+colorDict.lightblue3="#9ac0cd";
+colorDict.lightblue4="#68838b";
+colorDict.lightcoral="#f08080";
+colorDict.lightcyan="#e0ffff";
+colorDict.lightcyan1="#e0ffff";
+colorDict.lightcyan2="#d1eeee";
+colorDict.lightcyan3="#b4cdcd";
+colorDict.lightcyan4="#7a8b8b";
+colorDict.lightgoldenrod="#eedd82";
+colorDict.lightgoldenrod1="#ffec8b";
+colorDict.lightgoldenrod2="#eedc82";
+colorDict.lightgoldenrod3="#cdbe70";
+colorDict.lightgoldenrod4="#8b814c";
+colorDict.lightgoldenrodyellow="#fafad2";
+colorDict.lightgray="#d3d3d3";
+colorDict.lightgrey="#d3d3d3";
+colorDict.lightpink="#ffb6c1";
+colorDict.lightpink1="#ffaeb9";
+colorDict.lightpink2="#eea2ad";
+colorDict.lightpink3="#cd8c95";
+colorDict.lightpink4="#8b5f65";
+colorDict.lightsalmon="#ffa07a";
+colorDict.lightsalmon1="#ffa07a";
+colorDict.lightsalmon2="#ee9572";
+colorDict.lightsalmon3="#cd8162";
+colorDict.lightsalmon4="#8b5742";
+colorDict.lightseagreen="#20b2aa";
+colorDict.lightskyblue="#87cefa";
+colorDict.lightskyblue1="#b0e2ff";
+colorDict.lightskyblue2="#a4d3ee";
+colorDict.lightskyblue3="#8db6cd";
+colorDict.lightskyblue4="#607b8b";
+colorDict.lightslateblue="#8470ff";
+colorDict.lightslategray="#778899";
+colorDict.lightslategrey="#778899";
+colorDict.lightsteelblue="#b0c4de";
+colorDict.lightsteelblue1="#cae1ff";
+colorDict.lightsteelblue2="#bcd2ee";
+colorDict.lightsteelblue3="#a2b5cd";
+colorDict.lightsteelblue4="#6e7b8b";
+colorDict.lightyellow="#ffffe0";
+colorDict.lightyellow1="#ffffe0";
+colorDict.lightyellow2="#eeeed1";
+colorDict.lightyellow3="#cdcdb4";
+colorDict.lightyellow4="#8b8b7a";
+colorDict.limegreen="#32cd32";
+colorDict.linen="#faf0e6";
+colorDict.magenta="#ff00ff";
+colorDict.magenta1="#ff00ff";
+colorDict.magenta2="#ee00ee";
+colorDict.magenta3="#cd00cd";
+colorDict.magenta4="#8b008b";
+colorDict.maroon="#b03060";
+colorDict.maroon1="#ff34b3";
+colorDict.maroon2="#ee30a7";
+colorDict.maroon3="#cd2990";
+colorDict.maroon4="#8b1c62";
+colorDict.mediumaquamarine="#66cdaa";
+colorDict.mediumblue="#0000cd";
+colorDict.mediumorchid="#ba55d3";
+colorDict.mediumorchid1="#e066ff";
+colorDict.mediumorchid2="#d15fee";
+colorDict.mediumorchid3="#b452cd";
+colorDict.mediumorchid4="#7a378b";
+colorDict.mediumpurple="#9370db";
+colorDict.mediumpurple1="#ab82ff";
+colorDict.mediumpurple2="#9f79ee";
+colorDict.mediumpurple3="#8968cd";
+colorDict.mediumpurple4="#5d478b";
+colorDict.mediumseagreen="#3cb371";
+colorDict.mediumslateblue="#7b68ee";
+colorDict.mediumspringgreen="#00fa9a";
+colorDict.mediumturquoise="#48d1cc";
+colorDict.mediumvioletred="#c71585";
+colorDict.midnightblue="#191970";
+colorDict.mintcream="#f5fffa";
+colorDict.mistyrose="#ffe4e1";
+colorDict.mistyrose1="#ffe4e1";
+colorDict.mistyrose2="#eed5d2";
+colorDict.mistyrose3="#cdb7b5";
+colorDict.mistyrose4="#8b7d7b";
+colorDict.moccasin="#ffe4b5";
+colorDict.navajowhite="#ffdead";
+colorDict.navajowhite1="#ffdead";
+colorDict.navajowhite2="#eecfa1";
+colorDict.navajowhite3="#cdb38b";
+colorDict.navajowhite4="#8b795e";
+colorDict.navy="#000080";
+colorDict.navyblue="#000080";
+colorDict.none="#fffffe";
+colorDict.oldlace="#fdf5e6";
+colorDict.olivedrab="#6b8e23";
+colorDict.olivedrab1="#c0ff3e";
+colorDict.olivedrab2="#b3ee3a";
+colorDict.olivedrab3="#9acd32";
+colorDict.olivedrab4="#698b22";
+colorDict.orange="#ffa500";
+colorDict.orange1="#ffa500";
+colorDict.orange2="#ee9a00";
+colorDict.orange3="#cd8500";
+colorDict.orange4="#8b5a00";
+colorDict.orangered="#ff4500";
+colorDict.orangered1="#ff4500";
+colorDict.orangered2="#ee4000";
+colorDict.orangered3="#cd3700";
+colorDict.orangered4="#8b2500";
+colorDict.orchid="#da70d6";
+colorDict.orchid1="#ff83fa";
+colorDict.orchid2="#ee7ae9";
+colorDict.orchid3="#cd69c9";
+colorDict.orchid4="#8b4789";
+colorDict.palegoldenrod="#eee8aa";
+colorDict.palegreen="#98fb98";
+colorDict.palegreen1="#9aff9a";
+colorDict.palegreen2="#90ee90";
+colorDict.palegreen3="#7ccd7c";
+colorDict.palegreen4="#548b54";
+colorDict.paleturquoise="#afeeee";
+colorDict.paleturquoise1="#bbffff";
+colorDict.paleturquoise2="#aeeeee";
+colorDict.paleturquoise3="#96cdcd";
+colorDict.paleturquoise4="#668b8b";
+colorDict.palevioletred="#db7093";
+colorDict.palevioletred1="#ff82ab";
+colorDict.palevioletred2="#ee799f";
+colorDict.palevioletred3="#cd6889";
+colorDict.palevioletred4="#8b475d";
+colorDict.papayawhip="#ffefd5";
+colorDict.peachpuff="#ffdab9";
+colorDict.peachpuff1="#ffdab9";
+colorDict.peachpuff2="#eecbad";
+colorDict.peachpuff3="#cdaf95";
+colorDict.peachpuff4="#8b7765";
+colorDict.peru="#cd853f";
+colorDict.pink="#ffc0cb";
+colorDict.pink1="#ffb5c5";
+colorDict.pink2="#eea9b8";
+colorDict.pink3="#cd919e";
+colorDict.pink4="#8b636c";
+colorDict.plum="#dda0dd";
+colorDict.plum1="#ffbbff";
+colorDict.plum2="#eeaeee";
+colorDict.plum3="#cd96cd";
+colorDict.plum4="#8b668b";
+colorDict.powderblue="#b0e0e6";
+colorDict.purple="#a020f0";
+colorDict.purple1="#9b30ff";
+colorDict.purple2="#912cee";
+colorDict.purple3="#7d26cd";
+colorDict.purple4="#551a8b";
+colorDict.red="#ff0000";
+colorDict.red1="#ff0000";
+colorDict.red2="#ee0000";
+colorDict.red3="#cd0000";
+colorDict.red4="#8b0000";
+colorDict.rosybrown="#bc8f8f";
+colorDict.rosybrown1="#ffc1c1";
+colorDict.rosybrown2="#eeb4b4";
+colorDict.rosybrown3="#cd9b9b";
+colorDict.rosybrown4="#8b6969";
+colorDict.royalblue="#4169e1";
+colorDict.royalblue1="#4876ff";
+colorDict.royalblue2="#436eee";
+colorDict.royalblue3="#3a5fcd";
+colorDict.royalblue4="#27408b";
+colorDict.saddlebrown="#8b4513";
+colorDict.salmon="#fa8072";
+colorDict.salmon1="#ff8c69";
+colorDict.salmon2="#ee8262";
+colorDict.salmon3="#cd7054";
+colorDict.salmon4="#8b4c39";
+colorDict.sandybrown="#f4a460";
+colorDict.seagreen="#2e8b57";
+colorDict.seagreen1="#54ff9f";
+colorDict.seagreen2="#4eee94";
+colorDict.seagreen3="#43cd80";
+colorDict.seagreen4="#2e8b57";
+colorDict.seashell="#fff5ee";
+colorDict.seashell1="#fff5ee";
+colorDict.seashell2="#eee5de";
+colorDict.seashell3="#cdc5bf";
+colorDict.seashell4="#8b8682";
+colorDict.sienna="#a0522d";
+colorDict.sienna1="#ff8247";
+colorDict.sienna2="#ee7942";
+colorDict.sienna3="#cd6839";
+colorDict.sienna4="#8b4726";
+colorDict.skyblue="#87ceeb";
+colorDict.skyblue1="#87ceff";
+colorDict.skyblue2="#7ec0ee";
+colorDict.skyblue3="#6ca6cd";
+colorDict.skyblue4="#4a708b";
+colorDict.slateblue="#6a5acd";
+colorDict.slateblue1="#836fff";
+colorDict.slateblue2="#7a67ee";
+colorDict.slateblue3="#6959cd";
+colorDict.slateblue4="#473c8b";
+colorDict.slategray="#708090";
+colorDict.slategray1="#c6e2ff";
+colorDict.slategray2="#b9d3ee";
+colorDict.slategray3="#9fb6cd";
+colorDict.slategray4="#6c7b8b";
+colorDict.slategrey="#708090";
+colorDict.snow="#fffafa";
+colorDict.snow1="#fffafa";
+colorDict.snow2="#eee9e9";
+colorDict.snow3="#cdc9c9";
+colorDict.snow4="#8b8989";
+colorDict.springgreen="#00ff7f";
+colorDict.springgreen1="#00ff7f";
+colorDict.springgreen2="#00ee76";
+colorDict.springgreen3="#00cd66";
+colorDict.springgreen4="#008b45";
+colorDict.steelblue="#4682b4";
+colorDict.steelblue1="#63b8ff";
+colorDict.steelblue2="#5cacee";
+colorDict.steelblue3="#4f94cd";
+colorDict.steelblue4="#36648b";
+colorDict.tan="#d2b48c";
+colorDict.tan1="#ffa54f";
+colorDict.tan2="#ee9a49";
+colorDict.tan3="#cd853f";
+colorDict.tan4="#8b5a2b";
+colorDict.thistle="#d8bfd8";
+colorDict.thistle1="#ffe1ff";
+colorDict.thistle2="#eed2ee";
+colorDict.thistle3="#cdb5cd";
+colorDict.thistle4="#8b7b8b";
+colorDict.tomato="#ff6347";
+colorDict.tomato1="#ff6347";
+colorDict.tomato2="#ee5c42";
+colorDict.tomato3="#cd4f39";
+colorDict.tomato4="#8b3626";
+colorDict.transparent="#fffffe";
+colorDict.turquoise="#40e0d0";
+colorDict.turquoise1="#00f5ff";
+colorDict.turquoise2="#00e5ee";
+colorDict.turquoise3="#00c5cd";
+colorDict.turquoise4="#00868b";
+colorDict.violet="#ee82ee";
+colorDict.violetred="#d02090";
+colorDict.violetred1="#ff3e96";
+colorDict.violetred2="#ee3a8c";
+colorDict.violetred3="#cd3278";
+colorDict.violetred4="#8b2252";
+colorDict.wheat="#f5deb3";
+colorDict.wheat1="#ffe7ba";
+colorDict.wheat2="#eed8ae";
+colorDict.wheat3="#cdba96";
+colorDict.wheat4="#8b7e66";
+colorDict.white="#ffffff";
+colorDict.whitesmoke="#f5f5f5";
+colorDict.yellow="#ffff00";
+colorDict.yellow1="#ffff00";
+colorDict.yellow2="#eeee00";
+colorDict.yellow3="#cdcd00";
+colorDict.yellow4="#8b8b00";
+colorDict.yellowgreen="#9acd32";
+
+
+},{}],53:[function(require,module,exports){
 var nullEvents = require('./nullEvents.js');
 
 module.exports = createDocumentEvents();
@@ -8044,7 +8042,7 @@ function off(eventName, handler) {
   document.removeEventListener(eventName, handler);
 }
 
-},{"./nullEvents.js":52}],49:[function(require,module,exports){
+},{"./nullEvents.js":57}],54:[function(require,module,exports){
 /**
  * Finds the absolute position of an element on a page
  */
@@ -8063,7 +8061,7 @@ function findElementPosition(obj) {
     return [curleft, curtop];
 }
 
-},{}],50:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 module.exports = getDimension;
 
 function getDimension(container) {
@@ -8085,7 +8083,7 @@ function getDimension(container) {
     };
 }
 
-},{}],51:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 var intersect = require('gintersect');
 
 module.exports = intersectRect;
@@ -8097,7 +8095,7 @@ function intersectRect(left, top, right, bottom, x1, y1, x2, y2) {
     intersect(right, top, left, top, x1, y1, x2, y2);
 }
 
-},{"gintersect":4}],52:[function(require,module,exports){
+},{"gintersect":4}],57:[function(require,module,exports){
 module.exports = createNullEvents();
 
 function createNullEvents() {
@@ -8110,7 +8108,7 @@ function createNullEvents() {
 
 function noop() { }
 
-},{}],53:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 module.exports = Rect;
 
 /**
@@ -8123,7 +8121,7 @@ function Rect (x1, y1, x2, y2) {
     this.y2 = y2 || 0;
 }
 
-},{}],54:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (global){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
@@ -8219,7 +8217,7 @@ function createTimer() {
 function noop() {}
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],55:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 var nullEvents = require('./nullEvents.js');
 
 module.exports = createDocumentEvents();
@@ -8244,7 +8242,7 @@ function off(eventName, handler) {
 }
 
 
-},{"./nullEvents.js":52}],56:[function(require,module,exports){
+},{"./nullEvents.js":57}],61:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses CSS based drawings.
  *
@@ -8738,7 +8736,7 @@ function renderer(graph, settings) {
   }
 }
 
-},{"../Input/domInputManager.js":42,"../Input/dragndrop.js":43,"../Utils/getDimensions.js":50,"../Utils/timer.js":54,"../Utils/windowEvents.js":55,"./svgGraphics.js":57,"ngraph.events":10,"ngraph.forcelayout":12}],57:[function(require,module,exports){
+},{"../Input/domInputManager.js":46,"../Input/dragndrop.js":47,"../Utils/getDimensions.js":55,"../Utils/timer.js":59,"../Utils/windowEvents.js":60,"./svgGraphics.js":62,"ngraph.events":10,"ngraph.forcelayout":12}],62:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses SVG based drawings.
  *
@@ -9096,7 +9094,7 @@ function svgGraphics() {
     }
 }
 
-},{"../Input/domInputManager.js":42,"ngraph.events":10,"simplesvg":36}],58:[function(require,module,exports){
+},{"../Input/domInputManager.js":46,"ngraph.events":10,"simplesvg":40}],63:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses WebGL based drawings.
  *
@@ -9195,6 +9193,7 @@ function webglGraphics(options) {
         };
 
     graphicsRoot = window.document.createElement("canvas");
+    graphicsRoot.setAttribute('id', 'canvas');
 
     var graphics = {
         getLinkUI: function (linkId) {
@@ -9684,7 +9683,7 @@ function webglGraphics(options) {
     return graphics;
 }
 
-},{"../Input/webglInputManager.js":44,"../WebGL/webglLine.js":66,"../WebGL/webglLinkProgram.js":67,"../WebGL/webglNodeProgram.js":68,"../WebGL/webglSquare.js":69,"ngraph.events":10,"ngraph.merge":20}],59:[function(require,module,exports){
+},{"../Input/webglInputManager.js":48,"../WebGL/webglLine.js":71,"../WebGL/webglLinkProgram.js":72,"../WebGL/webglNodeProgram.js":73,"../WebGL/webglSquare.js":74,"ngraph.events":10,"ngraph.merge":24}],64:[function(require,module,exports){
 module.exports = parseColor;
 
 function parseColor(color) {
@@ -9708,7 +9707,7 @@ function parseColor(color) {
   return parsedColor;
 }
 
-},{}],60:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 module.exports = Texture;
 
 /**
@@ -9721,7 +9720,7 @@ function Texture(size) {
   this.canvas.width = this.canvas.height = size;
 }
 
-},{}],61:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 /**
  * @fileOverview Utility functions for webgl rendering.
  *
@@ -9828,7 +9827,7 @@ function swapArrayPart(array, from, to, elementsCount) {
   }
 }
 
-},{}],62:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 var Texture = require('./texture.js');
 
 module.exports = webglAtlas;
@@ -10032,7 +10031,7 @@ function isPowerOf2(n) {
   return (n & (n - 1)) === 0;
 }
 
-},{"./texture.js":60}],63:[function(require,module,exports){
+},{"./texture.js":65}],68:[function(require,module,exports){
 module.exports = webglImage;
 
 /**
@@ -10064,7 +10063,7 @@ function webglImage(size, src) {
     };
 }
 
-},{}],64:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 /**
  * @fileOverview Defines an image nodes for webglGraphics class.
  * Shape of nodes is square.
@@ -10328,7 +10327,7 @@ function createNodeVertexShader() {
   ].join("\n");
 }
 
-},{"./webgl.js":61,"./webglAtlas.js":62}],65:[function(require,module,exports){
+},{"./webgl.js":66,"./webglAtlas.js":67}],70:[function(require,module,exports){
 var documentEvents = require('../Utils/documentEvents.js');
 
 module.exports = webglInputEvents;
@@ -10588,7 +10587,7 @@ function webglInputEvents(webglGraphics) {
   }
 }
 
-},{"../Utils/documentEvents.js":48}],66:[function(require,module,exports){
+},{"../Utils/documentEvents.js":53}],71:[function(require,module,exports){
 var parseColor = require('./parseColor.js');
 
 module.exports = webglLine;
@@ -10609,7 +10608,7 @@ function webglLine(color) {
   };
 }
 
-},{"./parseColor.js":59}],67:[function(require,module,exports){
+},{"./parseColor.js":64}],72:[function(require,module,exports){
 /**
  * @fileOverview Defines a naive form of links for webglGraphics class.
  * This form allows to change color of links.
@@ -10767,7 +10766,7 @@ function webglLinkProgram() {
     };
 }
 
-},{"./webgl.js":61}],68:[function(require,module,exports){
+},{"./webgl.js":66}],73:[function(require,module,exports){
 /**
  * @fileOverview Defines a naive form of nodes for webglGraphics class.
  * This form allows to change color of node. Shape of nodes is rectangular.
@@ -10932,7 +10931,7 @@ function webglNodeProgram() {
   }
 }
 
-},{"./webgl.js":61}],69:[function(require,module,exports){
+},{"./webgl.js":66}],74:[function(require,module,exports){
 var parseColor = require('./parseColor.js');
 
 module.exports = webglSquare;
@@ -10958,17 +10957,33 @@ function webglSquare(size, color) {
   };
 }
 
-},{"./parseColor.js":59}],70:[function(require,module,exports){
+},{"./parseColor.js":64}],75:[function(require,module,exports){
 // todo: this should be generated at build time.
 module.exports = '0.10.1';
 
-},{}],71:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 /**
  * This is an entry point for global namespace. If you want to use separate
  * modules individually - you are more than welcome to do so.
  */
 
 var random = require('ngraph.random');
+
+// Dependency versions:
+// "gintersect": "0.1.0",            // latest github: 
+// "ngraph.centrality": "2.0.0",     // latest github: 0.3.0
+// "ngraph.events": "1.0.0",         // latest github: 0.0.4
+// "ngraph.forcelayout": "1.0.0",    // latest github: 0.5.0
+// "ngraph.fromjson": "2.0.0",       // latest github: 0.1.9
+// "ngraph.generators": "18.0.1",    // latest github: 18.0.1
+// "ngraph.graph": "18.0.1",         // latest github: 18.0.1
+// "ngraph.merge": "1.0.0",          // latest github: n/a
+// "ngraph.random": "1.0.0",         // latest github: 1.0.0
+// "ngraph.tojson": "0.1.4",         // latest github: 0.1.4
+// "ngraph.todot": "3.0.1",          // latest github: 3.0.1
+// "ngraph.fromdot": "git@github.com:jonn-smith/ngraph.fromdot.git#c8d7646d32a2cb72bdd21614b822c4e422571241",
+// "simplesvg": "0.0.10"             // latest github: 
+
 
 var Viva = {
   lazyExtend: function() {
@@ -11024,7 +11039,8 @@ Viva.Graph = {
     findElementPosition: require('./Utils/findElementPosition.js'),
     timer: require('./Utils/timer.js'),
     getDimension: require('./Utils/getDimensions.js'),
-    events: require('./Utils/backwardCompatibleEvents.js')
+    events: require('./Utils/backwardCompatibleEvents.js'),
+    colorLookup: require('./Utils/colorLookup.js')
   },
 
   Layout: {
@@ -11078,5 +11094,5 @@ Viva.Graph = {
 
 module.exports = Viva;
 
-},{"./Algorithms/centrality.js":40,"./Algorithms/operations.js":41,"./Input/domInputManager.js":42,"./Input/dragndrop.js":43,"./Input/webglInputManager.js":44,"./Layout/constant.js":45,"./Utils/backwardCompatibleEvents.js":46,"./Utils/browserInfo.js":47,"./Utils/findElementPosition.js":49,"./Utils/getDimensions.js":50,"./Utils/intersectRect.js":51,"./Utils/rect.js":53,"./Utils/timer.js":54,"./View/renderer.js":56,"./View/svgGraphics.js":57,"./View/webglGraphics.js":58,"./WebGL/parseColor.js":59,"./WebGL/texture.js":60,"./WebGL/webgl.js":61,"./WebGL/webglAtlas.js":62,"./WebGL/webglImage.js":63,"./WebGL/webglImageNodeProgram.js":64,"./WebGL/webglInputEvents.js":65,"./WebGL/webglLine.js":66,"./WebGL/webglLinkProgram.js":67,"./WebGL/webglNodeProgram.js":68,"./WebGL/webglSquare.js":69,"./version.js":70,"gintersect":4,"ngraph.events":10,"ngraph.forcelayout":12,"ngraph.fromdot":14,"ngraph.fromjson":16,"ngraph.generators":17,"ngraph.graph":19,"ngraph.merge":20,"ngraph.random":33,"ngraph.todot":34,"ngraph.tojson":35,"simplesvg":36}]},{},[71])(71)
+},{"./Algorithms/centrality.js":44,"./Algorithms/operations.js":45,"./Input/domInputManager.js":46,"./Input/dragndrop.js":47,"./Input/webglInputManager.js":48,"./Layout/constant.js":49,"./Utils/backwardCompatibleEvents.js":50,"./Utils/browserInfo.js":51,"./Utils/colorLookup.js":52,"./Utils/findElementPosition.js":54,"./Utils/getDimensions.js":55,"./Utils/intersectRect.js":56,"./Utils/rect.js":58,"./Utils/timer.js":59,"./View/renderer.js":61,"./View/svgGraphics.js":62,"./View/webglGraphics.js":63,"./WebGL/parseColor.js":64,"./WebGL/texture.js":65,"./WebGL/webgl.js":66,"./WebGL/webglAtlas.js":67,"./WebGL/webglImage.js":68,"./WebGL/webglImageNodeProgram.js":69,"./WebGL/webglInputEvents.js":70,"./WebGL/webglLine.js":71,"./WebGL/webglLinkProgram.js":72,"./WebGL/webglNodeProgram.js":73,"./WebGL/webglSquare.js":74,"./version.js":75,"gintersect":4,"ngraph.events":10,"ngraph.forcelayout":12,"ngraph.fromdot":13,"ngraph.fromjson":16,"ngraph.generators":19,"ngraph.graph":23,"ngraph.merge":24,"ngraph.random":37,"ngraph.todot":38,"ngraph.tojson":39,"simplesvg":40}]},{},[76])(76)
 });

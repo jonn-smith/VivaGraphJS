@@ -5,6 +5,22 @@
 
 var random = require('ngraph.random');
 
+// Dependency versions:
+// "gintersect": "0.1.0",            // latest github: 
+// "ngraph.centrality": "2.0.0",     // latest github: 0.3.0
+// "ngraph.events": "1.0.0",         // latest github: 0.0.4
+// "ngraph.forcelayout": "1.0.0",    // latest github: 0.5.0
+// "ngraph.fromjson": "2.0.0",       // latest github: 0.1.9
+// "ngraph.generators": "18.0.1",    // latest github: 18.0.1
+// "ngraph.graph": "18.0.1",         // latest github: 18.0.1
+// "ngraph.merge": "1.0.0",          // latest github: n/a
+// "ngraph.random": "1.0.0",         // latest github: 1.0.0
+// "ngraph.tojson": "0.1.4",         // latest github: 0.1.4
+// "ngraph.todot": "3.0.1",          // latest github: 3.0.1
+// "ngraph.fromdot": "git@github.com:jonn-smith/ngraph.fromdot.git#c8d7646d32a2cb72bdd21614b822c4e422571241",
+// "simplesvg": "0.0.10"             // latest github: 
+
+
 var Viva = {
   lazyExtend: function() {
     return require('ngraph.merge').apply(this, arguments);
@@ -59,7 +75,8 @@ Viva.Graph = {
     findElementPosition: require('./Utils/findElementPosition.js'),
     timer: require('./Utils/timer.js'),
     getDimension: require('./Utils/getDimensions.js'),
-    events: require('./Utils/backwardCompatibleEvents.js')
+    events: require('./Utils/backwardCompatibleEvents.js'),
+    colorLookup: require('./Utils/colorLookup.js')
   },
 
   Layout: {
