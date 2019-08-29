@@ -25,7 +25,9 @@ Viva.Graph = {
   serializer: function() {
     return {
       loadFromJSON: require('ngraph.fromjson'),
-      storeToJSON: require('ngraph.tojson')
+      storeToJSON: require('ngraph.tojson'),
+      loadFromDOT: require('ngraph.fromdot'),
+      storeToDOT: require('ngraph.todot'),
     };
   },
 

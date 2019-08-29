@@ -10,12 +10,12 @@
             function onLoad() {
                 var graphGenerator = Viva.Graph.generator();
 
-                var graph = graphGenerator.grid(10, 10);
+                // var graph = graphGenerator.grid(10, 10);
 
-                //var graph = graphGenerator.randomNoLinks(500);
-                //var graph = graphGenerator.completeBipartite(10, 10);
-                //var graph = graphGenerator.complete(100);
-                //var graph = graphGenerator.balancedBinTree(10);
+                // var graph = graphGenerator.randomNoLinks(500);
+                // var graph = graphGenerator.completeBipartite(10, 10);
+                // var graph = graphGenerator.complete(100);
+                var graph = graphGenerator.balancedBinTree(10);
 
                 var layout = Viva.Graph.Layout.forceDirected(graph, {
                    springLength : 10,
