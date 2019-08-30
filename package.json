@@ -45,7 +45,7 @@
     "ngraph.random": "1.0.0",
     "ngraph.tojson": "0.1.4",
     "ngraph.todot": "3.0.1",
-    "ngraph.fromdot": "git@github.com:jonn-smith/ngraph.fromdot.git#c8d7646d32a2cb72bdd21614b822c4e422571241",
+    "ngraph.fromdot": "git@github.com:jonn-smith/ngraph.fromdot.git#master",
     "simplesvg": "0.0.10"
   }
 }

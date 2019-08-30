@@ -3937,7 +3937,7 @@ function createLayout(graph, physicsSettings) {
 
 function noop() { }
 
-},{"ngraph.events":10,"ngraph.physics.simulator":26}],13:[function(require,module,exports){
+},{"ngraph.events":10,"ngraph.physics.simulator":24}],13:[function(require,module,exports){
 module.exports = load;
 
 var parseDot = require('dotparser');
@@ -4031,7 +4031,10 @@ function addNode(graph, nodeAST, attributesList) {
     var data = parseAttributesAsData(attributesList);
     if (data) {
       graph.addNode(nodeAST.id, data);
-    } else {
+    } 
+    // Only attempt to add in the node if we haven't already added it.
+    // Otherwise we'll lose all our annotations / data.
+    else if (graph.getNode(nodeAST.id) === undefined) {
       graph.addNode(nodeAST.id);
     }
     return [nodeAST.id];
@@ -4060,9 +4063,54 @@ function parseAttributesAsData(attributesList) {
 }
 
 
-},{"dotparser":3,"ngraph.graph":15}],14:[function(require,module,exports){
+},{"dotparser":3,"ngraph.graph":21}],14:[function(require,module,exports){
+module.exports = load;
+
+var createGraph = require('ngraph.graph');
+
+function load(jsonGraph, nodeTransform, linkTransform) {
+  var stored;
+  nodeTransform = nodeTransform || id;
+  linkTransform = linkTransform || id;
+  if (typeof jsonGraph === 'string') {
+    stored = JSON.parse(jsonGraph);
+  } else {
+    stored = jsonGraph;
+  }
+
+  var graph = createGraph(),
+      i;
+
+  if (stored.links === undefined || stored.nodes === undefined) {
+    throw new Error('Cannot load graph without links and nodes');
+  }
+
+  for (i = 0; i < stored.nodes.length; ++i) {
+    var parsedNode = nodeTransform(stored.nodes[i]);
+    if (!parsedNode.hasOwnProperty('id')) {
+      throw new Error('Graph node format is invalid: Node id is missing');
+    }
+
+    graph.addNode(parsedNode.id, parsedNode.data);
+  }
+
+  for (i = 0; i < stored.links.length; ++i) {
+    var link = linkTransform(stored.links[i]);
+    if (!link.hasOwnProperty('fromId') || !link.hasOwnProperty('toId')) {
+      throw new Error('Graph link format is invalid. Both fromId and toId are required');
+    }
+
+    graph.addLink(link.fromId, link.toId, link.data);
+  }
+
+  return graph;
+}
+
+function id(x) { return x; }
+
+},{"ngraph.graph":16}],15:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],15:[function(require,module,exports){
+},{"dup":10}],16:[function(require,module,exports){
 /**
  * @fileOverview Contains definition of the core graph object.
  */
@@ -4665,56 +4713,7 @@ function makeLinkId(fromId, toId) {
   return fromId.toString() + '👉 ' + toId.toString();
 }
 
-},{"ngraph.events":14}],16:[function(require,module,exports){
-module.exports = load;
-
-var createGraph = require('ngraph.graph');
-
-function load(jsonGraph, nodeTransform, linkTransform) {
-  var stored;
-  nodeTransform = nodeTransform || id;
-  linkTransform = linkTransform || id;
-  if (typeof jsonGraph === 'string') {
-    stored = JSON.parse(jsonGraph);
-  } else {
-    stored = jsonGraph;
-  }
-
-  var graph = createGraph(),
-      i;
-
-  if (stored.links === undefined || stored.nodes === undefined) {
-    throw new Error('Cannot load graph without links and nodes');
-  }
-
-  for (i = 0; i < stored.nodes.length; ++i) {
-    var parsedNode = nodeTransform(stored.nodes[i]);
-    if (!parsedNode.hasOwnProperty('id')) {
-      throw new Error('Graph node format is invalid: Node id is missing');
-    }
-
-    graph.addNode(parsedNode.id, parsedNode.data);
-  }
-
-  for (i = 0; i < stored.links.length; ++i) {
-    var link = linkTransform(stored.links[i]);
-    if (!link.hasOwnProperty('fromId') || !link.hasOwnProperty('toId')) {
-      throw new Error('Graph link format is invalid. Both fromId and toId are required');
-    }
-
-    graph.addLink(link.fromId, link.toId, link.data);
-  }
-
-  return graph;
-}
-
-function id(x) { return x; }
-
-},{"ngraph.graph":18}],17:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],18:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15,"ngraph.events":17}],19:[function(require,module,exports){
+},{"ngraph.events":15}],17:[function(require,module,exports){
 var createGraph = require('ngraph.graph');
 
 module.exports = factory(createGraph);
@@ -5061,11 +5060,11 @@ function factory(createGraph) {
   }
 }
 
-},{"ngraph.graph":21,"ngraph.random":22}],20:[function(require,module,exports){
+},{"ngraph.graph":19,"ngraph.random":20}],18:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],21:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15,"ngraph.events":20}],22:[function(require,module,exports){
+},{"dup":10}],19:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16,"ngraph.events":18}],20:[function(require,module,exports){
 module.exports = random;
 
 // TODO: Deprecate?
@@ -5182,9 +5181,9 @@ function randomIterator(array, customRandom) {
     }
   }
 }
-},{}],23:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15,"ngraph.events":10}],24:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16,"ngraph.events":10}],22:[function(require,module,exports){
 module.exports = merge;
 
 /**
@@ -5217,7 +5216,7 @@ function merge(target, options) {
   return target;
 }
 
-},{}],25:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 module.exports = {
   Body: Body,
   Vector2d: Vector2d,
@@ -5284,7 +5283,7 @@ Vector3d.prototype.reset = function () {
   this.x = this.y = this.z = 0;
 };
 
-},{}],26:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Manages a simulation of physical forces acting on bodies and springs.
  */
@@ -5562,7 +5561,7 @@ function physicsSimulator(settings) {
   }
 };
 
-},{"./lib/bounds":27,"./lib/createBody":28,"./lib/dragForce":29,"./lib/eulerIntegrator":30,"./lib/spring":31,"./lib/springForce":32,"ngraph.events":10,"ngraph.expose":11,"ngraph.merge":24,"ngraph.quadtreebh":33}],27:[function(require,module,exports){
+},{"./lib/bounds":25,"./lib/createBody":26,"./lib/dragForce":27,"./lib/eulerIntegrator":28,"./lib/spring":29,"./lib/springForce":30,"ngraph.events":10,"ngraph.expose":11,"ngraph.merge":22,"ngraph.quadtreebh":31}],25:[function(require,module,exports){
 module.exports = function (bodies, settings) {
   var random = require('ngraph.random').random(42);
   var boundingBox =  { x1: 0, y1: 0, x2: 0, y2: 0 };
@@ -5644,14 +5643,14 @@ module.exports = function (bodies, settings) {
   }
 }
 
-},{"ngraph.random":37}],28:[function(require,module,exports){
+},{"ngraph.random":35}],26:[function(require,module,exports){
 var physics = require('ngraph.physics.primitives');
 
 module.exports = function(pos) {
   return new physics.Body(pos);
 }
 
-},{"ngraph.physics.primitives":25}],29:[function(require,module,exports){
+},{"ngraph.physics.primitives":23}],27:[function(require,module,exports){
 /**
  * Represents drag force, which reduces force value on each step by given
  * coefficient.
@@ -5680,7 +5679,7 @@ module.exports = function (options) {
   return api;
 };
 
-},{"ngraph.expose":11,"ngraph.merge":24}],30:[function(require,module,exports){
+},{"ngraph.expose":11,"ngraph.merge":22}],28:[function(require,module,exports){
 /**
  * Performs forces integration, using given timestep. Uses Euler method to solve
  * differential equation (http://en.wikipedia.org/wiki/Euler_method ).
@@ -5729,7 +5728,7 @@ function integrate(bodies, timeStep) {
   return (tx * tx + ty * ty)/max;
 }
 
-},{}],31:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = Spring;
 
 /**
@@ -5745,7 +5744,7 @@ function Spring(fromBody, toBody, length, coeff, weight) {
     this.weight = typeof weight === 'number' ? weight : 1;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 /**
  * Represents spring force, which updates forces acting on two bodies, conntected
  * by a spring.
@@ -5797,7 +5796,7 @@ module.exports = function (options) {
   return api;
 }
 
-},{"ngraph.expose":11,"ngraph.merge":24,"ngraph.random":37}],33:[function(require,module,exports){
+},{"ngraph.expose":11,"ngraph.merge":22,"ngraph.random":35}],31:[function(require,module,exports){
 /**
  * This is Barnes Hut simulation algorithm for 2d case. Implementation
  * is highly optimized (avoids recusion and gc pressure)
@@ -6126,7 +6125,7 @@ function setChild(node, idx, child) {
   else if (idx === 3) node.quad3 = child;
 }
 
-},{"./insertStack":34,"./isSamePosition":35,"./node":36,"ngraph.random":37}],34:[function(require,module,exports){
+},{"./insertStack":32,"./isSamePosition":33,"./node":34,"ngraph.random":35}],32:[function(require,module,exports){
 module.exports = InsertStack;
 
 /**
@@ -6170,7 +6169,7 @@ function InsertStackElement(node, body) {
     this.body = body; // physical body which needs to be inserted to node
 }
 
-},{}],35:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 module.exports = function isSamePosition(point1, point2) {
     var dx = Math.abs(point1.x - point2.x);
     var dy = Math.abs(point1.y - point2.y);
@@ -6178,7 +6177,7 @@ module.exports = function isSamePosition(point1, point2) {
     return (dx < 1e-8 && dy < 1e-8);
 };
 
-},{}],36:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 /**
  * Internal data structure to represent 2D QuadTree node
  */
@@ -6210,9 +6209,9 @@ module.exports = function Node() {
   this.right = 0;
 };
 
-},{}],37:[function(require,module,exports){
-arguments[4][22][0].apply(exports,arguments)
-},{"dup":22}],38:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
+arguments[4][20][0].apply(exports,arguments)
+},{"dup":20}],36:[function(require,module,exports){
 module.exports = todot;
 module.exports.write = write;
 
@@ -6288,7 +6287,7 @@ function dotEscape(id) {
 }
 
 
-},{}],39:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = save;
 
 function save(graph, customNodeTransform, customLinkTransform) {
@@ -6344,7 +6343,7 @@ function save(graph, customNodeTransform, customLinkTransform) {
   }
 }
 
-},{}],40:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = svg;
 
 svg.compile = require('./lib/compile');
@@ -6457,7 +6456,7 @@ function augment(element) {
   }
 }
 
-},{"./lib/compile":41,"./lib/compile_template":42,"add-event-listener":1}],41:[function(require,module,exports){
+},{"./lib/compile":39,"./lib/compile_template":40,"add-event-listener":1}],39:[function(require,module,exports){
 var parser = require('./domparser.js');
 var svg = require('../');
 
@@ -6485,7 +6484,7 @@ function addNamespaces(text) {
   }
 }
 
-},{"../":40,"./domparser.js":43}],42:[function(require,module,exports){
+},{"../":38,"./domparser.js":41}],40:[function(require,module,exports){
 module.exports = template;
 
 var BINDING_EXPR = /{{(.+?)}}/;
@@ -6579,7 +6578,7 @@ function bindTextContent(element, allBindings) {
   }
 }
 
-},{}],43:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = createDomparser();
 
 function createDomparser() {
@@ -6595,7 +6594,7 @@ function fail() {
   throw new Error('DOMParser is not supported by this platform. Please open issue here https://github.com/anvaka/simplesvg');
 }
 
-},{}],44:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var centrality = require('ngraph.centrality');
 
 module.exports = centralityWrapper;
@@ -6633,7 +6632,7 @@ function toVivaGraphCentralityFormat(centrality) {
   }
 }
 
-},{"ngraph.centrality":5}],45:[function(require,module,exports){
+},{"ngraph.centrality":5}],43:[function(require,module,exports){
 /**
  * @fileOverview Contains collection of primitive operations under graph.
  *
@@ -6668,7 +6667,7 @@ function operations() {
     };
 };
 
-},{}],46:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -6717,7 +6716,7 @@ function domInputManager(graph, graphics) {
   }
 }
 
-},{"./dragndrop.js":47}],47:[function(require,module,exports){
+},{"./dragndrop.js":45}],45:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -7000,7 +6999,7 @@ function dragndrop(element) {
     };
 }
 
-},{"../Utils/browserInfo.js":51,"../Utils/documentEvents.js":53,"../Utils/findElementPosition.js":54}],48:[function(require,module,exports){
+},{"../Utils/browserInfo.js":49,"../Utils/documentEvents.js":51,"../Utils/findElementPosition.js":52}],46:[function(require,module,exports){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
  */
@@ -7071,7 +7070,7 @@ function webglInputManager(graph, graphics) {
     };
 }
 
-},{"../WebGL/webglInputEvents.js":70}],49:[function(require,module,exports){
+},{"../WebGL/webglInputEvents.js":68}],47:[function(require,module,exports){
 module.exports = constant;
 
 var merge = require('ngraph.merge');
@@ -7270,7 +7269,7 @@ function constant(graph, userSettings) {
     }
 }
 
-},{"../Utils/rect.js":58,"ngraph.merge":24,"ngraph.random":37}],50:[function(require,module,exports){
+},{"../Utils/rect.js":56,"ngraph.merge":22,"ngraph.random":35}],48:[function(require,module,exports){
 /**
  * This module provides compatibility layer with 0.6.x library. It will be
  * removed in the next version
@@ -7315,7 +7314,7 @@ function backwardCompatibleEvents(g) {
   }
 }
 
-},{"ngraph.events":10}],51:[function(require,module,exports){
+},{"ngraph.events":10}],49:[function(require,module,exports){
 module.exports = browserInfo();
 
 function browserInfo() {
@@ -7344,7 +7343,7 @@ function browserInfo() {
   };
 }
 
-},{}],52:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 /**
  * This module provides a lookup table for color names.
  * Author: Jonn Smith
@@ -8018,7 +8017,7 @@ colorDict.yellow4="#8b8b00";
 colorDict.yellowgreen="#9acd32";
 
 
-},{}],53:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var nullEvents = require('./nullEvents.js');
 
 module.exports = createDocumentEvents();
@@ -8042,7 +8041,7 @@ function off(eventName, handler) {
   document.removeEventListener(eventName, handler);
 }
 
-},{"./nullEvents.js":57}],54:[function(require,module,exports){
+},{"./nullEvents.js":55}],52:[function(require,module,exports){
 /**
  * Finds the absolute position of an element on a page
  */
@@ -8061,7 +8060,7 @@ function findElementPosition(obj) {
     return [curleft, curtop];
 }
 
-},{}],55:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 module.exports = getDimension;
 
 function getDimension(container) {
@@ -8083,7 +8082,7 @@ function getDimension(container) {
     };
 }
 
-},{}],56:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 var intersect = require('gintersect');
 
 module.exports = intersectRect;
@@ -8095,7 +8094,7 @@ function intersectRect(left, top, right, bottom, x1, y1, x2, y2) {
     intersect(right, top, left, top, x1, y1, x2, y2);
 }
 
-},{"gintersect":4}],57:[function(require,module,exports){
+},{"gintersect":4}],55:[function(require,module,exports){
 module.exports = createNullEvents();
 
 function createNullEvents() {
@@ -8108,7 +8107,7 @@ function createNullEvents() {
 
 function noop() { }
 
-},{}],58:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 module.exports = Rect;
 
 /**
@@ -8121,7 +8120,7 @@ function Rect (x1, y1, x2, y2) {
     this.y2 = y2 || 0;
 }
 
-},{}],59:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 (function (global){
 /**
  * @author Andrei Kashcha (aka anvaka) / https://github.com/anvaka
@@ -8217,7 +8216,7 @@ function createTimer() {
 function noop() {}
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],60:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 var nullEvents = require('./nullEvents.js');
 
 module.exports = createDocumentEvents();
@@ -8242,7 +8241,7 @@ function off(eventName, handler) {
 }
 
 
-},{"./nullEvents.js":57}],61:[function(require,module,exports){
+},{"./nullEvents.js":55}],59:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses CSS based drawings.
  *
@@ -8736,7 +8735,7 @@ function renderer(graph, settings) {
   }
 }
 
-},{"../Input/domInputManager.js":46,"../Input/dragndrop.js":47,"../Utils/getDimensions.js":55,"../Utils/timer.js":59,"../Utils/windowEvents.js":60,"./svgGraphics.js":62,"ngraph.events":10,"ngraph.forcelayout":12}],62:[function(require,module,exports){
+},{"../Input/domInputManager.js":44,"../Input/dragndrop.js":45,"../Utils/getDimensions.js":53,"../Utils/timer.js":57,"../Utils/windowEvents.js":58,"./svgGraphics.js":60,"ngraph.events":10,"ngraph.forcelayout":12}],60:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses SVG based drawings.
  *
@@ -9094,7 +9093,7 @@ function svgGraphics() {
     }
 }
 
-},{"../Input/domInputManager.js":46,"ngraph.events":10,"simplesvg":40}],63:[function(require,module,exports){
+},{"../Input/domInputManager.js":44,"ngraph.events":10,"simplesvg":38}],61:[function(require,module,exports){
 /**
  * @fileOverview Defines a graph renderer that uses WebGL based drawings.
  *
@@ -9683,7 +9682,7 @@ function webglGraphics(options) {
     return graphics;
 }
 
-},{"../Input/webglInputManager.js":48,"../WebGL/webglLine.js":71,"../WebGL/webglLinkProgram.js":72,"../WebGL/webglNodeProgram.js":73,"../WebGL/webglSquare.js":74,"ngraph.events":10,"ngraph.merge":24}],64:[function(require,module,exports){
+},{"../Input/webglInputManager.js":46,"../WebGL/webglLine.js":69,"../WebGL/webglLinkProgram.js":70,"../WebGL/webglNodeProgram.js":71,"../WebGL/webglSquare.js":72,"ngraph.events":10,"ngraph.merge":22}],62:[function(require,module,exports){
 module.exports = parseColor;
 
 function parseColor(color) {
@@ -9707,7 +9706,7 @@ function parseColor(color) {
   return parsedColor;
 }
 
-},{}],65:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 module.exports = Texture;
 
 /**
@@ -9720,7 +9719,7 @@ function Texture(size) {
   this.canvas.width = this.canvas.height = size;
 }
 
-},{}],66:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /**
  * @fileOverview Utility functions for webgl rendering.
  *
@@ -9827,7 +9826,7 @@ function swapArrayPart(array, from, to, elementsCount) {
   }
 }
 
-},{}],67:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 var Texture = require('./texture.js');
 
 module.exports = webglAtlas;
@@ -10031,7 +10030,7 @@ function isPowerOf2(n) {
   return (n & (n - 1)) === 0;
 }
 
-},{"./texture.js":65}],68:[function(require,module,exports){
+},{"./texture.js":63}],66:[function(require,module,exports){
 module.exports = webglImage;
 
 /**
@@ -10063,7 +10062,7 @@ function webglImage(size, src) {
     };
 }
 
-},{}],69:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /**
  * @fileOverview Defines an image nodes for webglGraphics class.
  * Shape of nodes is square.
@@ -10327,7 +10326,7 @@ function createNodeVertexShader() {
   ].join("\n");
 }
 
-},{"./webgl.js":66,"./webglAtlas.js":67}],70:[function(require,module,exports){
+},{"./webgl.js":64,"./webglAtlas.js":65}],68:[function(require,module,exports){
 var documentEvents = require('../Utils/documentEvents.js');
 
 module.exports = webglInputEvents;
@@ -10587,7 +10586,7 @@ function webglInputEvents(webglGraphics) {
   }
 }
 
-},{"../Utils/documentEvents.js":53}],71:[function(require,module,exports){
+},{"../Utils/documentEvents.js":51}],69:[function(require,module,exports){
 var parseColor = require('./parseColor.js');
 
 module.exports = webglLine;
@@ -10608,7 +10607,7 @@ function webglLine(color) {
   };
 }
 
-},{"./parseColor.js":64}],72:[function(require,module,exports){
+},{"./parseColor.js":62}],70:[function(require,module,exports){
 /**
  * @fileOverview Defines a naive form of links for webglGraphics class.
  * This form allows to change color of links.
@@ -10766,7 +10765,7 @@ function webglLinkProgram() {
     };
 }
 
-},{"./webgl.js":66}],73:[function(require,module,exports){
+},{"./webgl.js":64}],71:[function(require,module,exports){
 /**
  * @fileOverview Defines a naive form of nodes for webglGraphics class.
  * This form allows to change color of node. Shape of nodes is rectangular.
@@ -10931,7 +10930,7 @@ function webglNodeProgram() {
   }
 }
 
-},{"./webgl.js":66}],74:[function(require,module,exports){
+},{"./webgl.js":64}],72:[function(require,module,exports){
 var parseColor = require('./parseColor.js');
 
 module.exports = webglSquare;
@@ -10957,11 +10956,11 @@ function webglSquare(size, color) {
   };
 }
 
-},{"./parseColor.js":64}],75:[function(require,module,exports){
+},{"./parseColor.js":62}],73:[function(require,module,exports){
 // todo: this should be generated at build time.
 module.exports = '0.10.1';
 
-},{}],76:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 /**
  * This is an entry point for global namespace. If you want to use separate
  * modules individually - you are more than welcome to do so.
@@ -11094,5 +11093,5 @@ Viva.Graph = {
 
 module.exports = Viva;
 
-},{"./Algorithms/centrality.js":44,"./Algorithms/operations.js":45,"./Input/domInputManager.js":46,"./Input/dragndrop.js":47,"./Input/webglInputManager.js":48,"./Layout/constant.js":49,"./Utils/backwardCompatibleEvents.js":50,"./Utils/browserInfo.js":51,"./Utils/colorLookup.js":52,"./Utils/findElementPosition.js":54,"./Utils/getDimensions.js":55,"./Utils/intersectRect.js":56,"./Utils/rect.js":58,"./Utils/timer.js":59,"./View/renderer.js":61,"./View/svgGraphics.js":62,"./View/webglGraphics.js":63,"./WebGL/parseColor.js":64,"./WebGL/texture.js":65,"./WebGL/webgl.js":66,"./WebGL/webglAtlas.js":67,"./WebGL/webglImage.js":68,"./WebGL/webglImageNodeProgram.js":69,"./WebGL/webglInputEvents.js":70,"./WebGL/webglLine.js":71,"./WebGL/webglLinkProgram.js":72,"./WebGL/webglNodeProgram.js":73,"./WebGL/webglSquare.js":74,"./version.js":75,"gintersect":4,"ngraph.events":10,"ngraph.forcelayout":12,"ngraph.fromdot":13,"ngraph.fromjson":16,"ngraph.generators":19,"ngraph.graph":23,"ngraph.merge":24,"ngraph.random":37,"ngraph.todot":38,"ngraph.tojson":39,"simplesvg":40}]},{},[76])(76)
+},{"./Algorithms/centrality.js":42,"./Algorithms/operations.js":43,"./Input/domInputManager.js":44,"./Input/dragndrop.js":45,"./Input/webglInputManager.js":46,"./Layout/constant.js":47,"./Utils/backwardCompatibleEvents.js":48,"./Utils/browserInfo.js":49,"./Utils/colorLookup.js":50,"./Utils/findElementPosition.js":52,"./Utils/getDimensions.js":53,"./Utils/intersectRect.js":54,"./Utils/rect.js":56,"./Utils/timer.js":57,"./View/renderer.js":59,"./View/svgGraphics.js":60,"./View/webglGraphics.js":61,"./WebGL/parseColor.js":62,"./WebGL/texture.js":63,"./WebGL/webgl.js":64,"./WebGL/webglAtlas.js":65,"./WebGL/webglImage.js":66,"./WebGL/webglImageNodeProgram.js":67,"./WebGL/webglInputEvents.js":68,"./WebGL/webglLine.js":69,"./WebGL/webglLinkProgram.js":70,"./WebGL/webglNodeProgram.js":71,"./WebGL/webglSquare.js":72,"./version.js":73,"gintersect":4,"ngraph.events":10,"ngraph.forcelayout":12,"ngraph.fromdot":13,"ngraph.fromjson":14,"ngraph.generators":17,"ngraph.graph":21,"ngraph.merge":22,"ngraph.random":35,"ngraph.todot":36,"ngraph.tojson":37,"simplesvg":38}]},{},[74])(74)
 });
